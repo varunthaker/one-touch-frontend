@@ -1,0 +1,14 @@
+.tabs-container {
+  display: flex;
+  justify-content: flex-start; /* Align tabs to the left */
+  padding: 1rem; /* Add some padding around the tabs */
+  /* width: 100vh; */
+}
+
+.ant-tabs {
+  width: 100%; /* Ensure tabs take the full width */
+}
+
+.ant-tabs-tab {
+  margin-right: 1rem; /* Add spacing between tabs */
+}
