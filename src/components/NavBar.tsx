@@ -73,7 +73,7 @@ const Layout = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const selectedSabhaCenterName = useSabhaSelectorStore(state => state.selectedSabhaCenterName);
 
-  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
     setMobileOpen(false);
   };
