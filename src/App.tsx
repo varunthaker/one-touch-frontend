@@ -7,17 +7,17 @@ import "./css/App.css";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Layout from "./components/layout/Layout";
 import Login from "./components/login/Login";
-import Home from "./components/layout/Home";
-import { youthdata } from "./components/assets/dummydata";
-import { youthType } from "./types";
-import { useState } from "react";
+// import Home from "./components/layout/Home";
+// import { youthdata } from "./components/assets/dummydata";
+// import { youthType } from "./types";
+// import { useState } from "react";
 import SabhaSelector from "./components/sabhaCenter/SabhaSelector";
 // import { YouthInfoForm } from "./components/forms/youthForm";
 
 function App() {
-  const [selectedYouthId, setSelectedYouthId] = useState<number | null>(null);
+  // const [selectedYouthId, setSelectedYouthId] = useState<number | null>(null);
 
-  const selectedYouth = youthdata?.find((youth: youthType) => youth.youthId === selectedYouthId);
+  // const selectedYouth = youthdata?.find((youth: youthType) => youth.youthId === selectedYouthId);
 
   return (
     <>
