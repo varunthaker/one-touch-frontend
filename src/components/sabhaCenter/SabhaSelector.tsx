@@ -93,7 +93,7 @@ const SabhaSelector: React.FC = () => {
                 onClick={handleRedirect}
                 size="large"
               >
-                Go to Youth Page
+                Go to Dashboard
               </Button>
             </Box>
           )}
