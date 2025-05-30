@@ -26,7 +26,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/layout" element={<Layout />} />
-          <Route path="/sabhaselector" element={<SabhaSelector />} />
+          <Route path="/sabhacenterselector" element={<SabhaSelector />} />
           {/* <Route path="youths" element={<Youths youths={youthdata} selectedYouthId={setSelectedYouthId} />} /> */}
           {/* <Route
               path="/layout/create"
