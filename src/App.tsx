@@ -11,6 +11,7 @@ import Home from "./components/layout/Home";
 import { youthdata } from "./components/assets/dummydata";
 import { youthType } from "./types";
 import { useState } from "react";
+import SabhaSelector from "./components/sabhaCenter/SabhaSelector";
 // import { YouthInfoForm } from "./components/forms/youthForm";
 
 function App() {
@@ -22,11 +23,12 @@ function App() {
     <>
       <Router>
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<SabhaSelector />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/layout" element={<Layout />}>
-            {/* <Route path="youths" element={<Youths youths={youthdata} selectedYouthId={setSelectedYouthId} />} /> */}
-            {/* <Route
+          <Route path="/layout" element={<Layout />} />
+          <Route path="/sabhacenterselector" element={<SabhaSelector />} />
+          {/* <Route path="youths" element={<Youths youths={youthdata} selectedYouthId={setSelectedYouthId} />} /> */}
+          {/* <Route
               path="/layout/create"
               element={
                 <YouthInfoForm
@@ -49,14 +51,13 @@ function App() {
                 />
               }
             /> */}
-            {/* <Route path="/dashboard" element={<Dashboard />} />
+          {/* <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/youths/:selectedUserId" element={<Youth youth={selectedYouth} />} />
             <Route path="/youths/:selectedUserId/update" element={<YouthInfoForm youth={selectedYouth} />} />
             <Route path="/attendance" element={<Attendance youths={youthdata} />} />
             <Route path="/report" element={<Report />} /> */}
-          </Route>
         </Routes>
-      </Router>
+      </Router >
     </>
   );
 }

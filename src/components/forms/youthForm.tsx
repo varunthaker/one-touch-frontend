@@ -1,177 +1,291 @@
-import { E164Number } from "libphonenumber-js/core";
-import { useState } from "react";
-import { Modal, Button, Form, Input, Checkbox, Radio, Select, DatePicker } from "antd";
-// import PhoneInput from "react-phone-number-input";
-import format from "date-fns/format";
-import { youthType } from "../../types";
-import dayjs from "dayjs";
+import { useEffect } from "react";
+import { 
+  Dialog, 
+  DialogTitle, 
+  DialogContent, 
+  DialogActions, 
+  Button, 
+  TextField, 
+  Box,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormControlLabel,
+  Switch,
+  OutlinedInput,
+  Chip
+} from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { useForm, Controller } from "react-hook-form";
+import axios from "axios";
+import useSabhaCenterStore from "../../store/useSabhaCenterStore";
+import useYouthsStore from "../../store/useYouthsStore";
+import dayjs from 'dayjs';
+
+interface YouthFormData {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone_number: string;
+  birth_date: string;
+  origin_city_india: string;
+  current_city_germany: string;
+  is_active: boolean;
+  karyakarta_id: number;
+  educational_field: string;
+  sabha_center_ids: number[];
+}
 
 interface YouthInfoFormProps {
-  youth: youthType | null;
   visible: boolean;
   onClose: () => void;
 }
 
-export function YouthInfoForm({ youth, visible, onClose }: YouthInfoFormProps) {
-  const [selectedSabha, setSelectedSabha] = useState<string | null>(youth?.sabhaType || null);
-  const [phoneNumber, setPhoneNumber] = useState<E164Number | string>("");
-  const [phoneSameAsWhatsApp, setPhoneSameAsWhatsApp] = useState<boolean>(false);
-  const [whatsAppNumber, setWhatsAppNumber] = useState<E164Number | string>("");
+export function YouthInfoForm({ visible, onClose }: YouthInfoFormProps) {
+  const { sabhaCenters, fetchSabhaCenters } = useSabhaCenterStore();
+  const { fetchYouths } = useYouthsStore();
+  const { handleSubmit, control, reset } = useForm<YouthFormData>({
+    defaultValues: {
+      first_name: "",
+      last_name: "",
+      email: "",
+      phone_number: "",
+      birth_date: dayjs().format('YYYY-MM-DD'),
+      origin_city_india: "",
+      current_city_germany: "",
+      is_active: true,
+      karyakarta_id: 1,
+      educational_field: "",
+      sabha_center_ids: [],
+    },
+  });
 
-  const countryCodes = [
-    { label: "+49", value: "+49" },
-    { label: "+91", value: "+91" },
-    { label: "+48", value: "+48" },
-    { label: "+420", value: "+420" },
-    { label: "+351", value: "+351" },
-  ];
-
-  // Handle Form Submission
-  async function handleSubmit(values: any) {
-    console.log("Form Submitted:", values);
-
-    let method = "POST";
-    let requestURL = "/youths";
-
-    if (youth) {
-      method = "PUT";
-      requestURL = `/youths/${youth.youthId}`;
+  useEffect(() => {
+    if (visible) {
+      fetchSabhaCenters();
     }
+  }, [visible, fetchSabhaCenters]);
 
-    // Backend Post method
-    const response = await fetch(requestURL, {
-      method: method,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(values),
-    });
-
-    if (response.ok) {
-      console.log("Youth saved successfully!");
-      onClose(); // Close the modal after successful submission
-    } else {
-      console.error(`Error: ${response}`);
+  const onSubmit = async (data: YouthFormData) => {
+    try {
+      await axios.post('https://onetouch-backend-mi70.onrender.com/api/youths/', {
+        ...data,
+        created_at: dayjs().toISOString(),
+        karyakarta_id: 1, // Ensure karyakarta_id is always 1
+      });
+      await fetchYouths(); // Refresh the youths data
+      reset(); // Reset form
+      onClose(); // Close modal
+    } catch (error) {
+      console.error('Error creating youth:', error);
     }
-  }
+  };
 
   return (
-    <Modal
-      title={"Add Youth"}
-      open={visible}
-      onCancel={onClose}
-      footer={null} // Remove default footer buttons
-      centered
-      width="60%" // Set custom width
-      style={{
-        top: 20, // Add distance from the top
-        height: "80vh", // Set custom height
-        overflowY: "auto", // Enable scrolling if content overflows
-      }}
+    <Dialog 
+      open={visible} 
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
     >
-      <Form
-        layout="vertical"
-        onFinish={handleSubmit}
-        initialValues={{
-          firstName: youth?.firstName || "",
-          lastName: youth?.lastName || "",
-          email: youth?.email || "",
-          birthdate: youth?.birthdate ? format(youth.birthdate, "yyyy-MM-dd") : "",
-          phoneNumber: youth?.phoneNumber || "",
-          whatsAppNumber: youth?.whatsAppNumber || "",
-          cityInGermany: youth?.cityInGermany || "",
-          cityInIndia: youth?.cityInIndia || "",
-          educationInGermany: youth?.educationInGermany || "",
-          refNameforSabha: youth?.refNameforSabha || "",
-          sabhaType: youth?.sabhaType || "",
-        }}
-      >
-        <Form.Item label="First Name" name="firstName" rules={[{ required: true, message: "Please enter the first name" }]}>
-          <Input />
-        </Form.Item>
-        <Form.Item label="Last Name" name="lastName" rules={[{ required: true, message: "Please enter the last name" }]}>
-          <Input />
-        </Form.Item>
-        <Form.Item label="Email" name="email" rules={[{ required: true, type: "email", message: "Please enter a valid email" }]}>
-          <Input />
-        </Form.Item>
-        <Form.Item label="Birthdate" name="birthdate" rules={[{ required: true, message: "Please select a birthdate" }]}>
-          <DatePicker
-            format="DD-MM-YYYY" // Specify the date format
-            style={{ width: "100%" }} // Make the DatePicker full width
-            defaultValue={youth?.birthdate ? dayjs(youth.birthdate, "DD-MM-YYYY") : undefined}
-          />
-        </Form.Item>
-        <Form.Item
-          label="Phone Number"
-          name="phoneNumber"
-          rules={[
-            { required: true, message: "Please enter a phone number" },
-            { pattern: /^[0-9]+$/, message: "Phone number must contain only numbers" }, // Validation for numeric input
-          ]}
-        >
-          <Input
-            addonBefore={<Select defaultValue="+49" options={countryCodes} style={{ width: 80 }} onChange={(value) => console.log("Selected country code:", value)} />}
-            placeholder="Enter phone number"
-          />
-        </Form.Item>
-        <Form.Item>
-          <Checkbox
-            checked={phoneSameAsWhatsApp}
-            onChange={(e) => {
-              setPhoneSameAsWhatsApp(e.target.checked);
-              if (e.target.checked) {
-                setWhatsAppNumber(phoneNumber);
-              }
-            }}
-          >
-            WhatsApp is the same as the given phone number
-          </Checkbox>
-        </Form.Item>
-
-        {!phoneSameAsWhatsApp && (
-          <Form.Item
-            label="WhatsApp Number"
-            name="whatsAppNumber"
-            rules={[
-              { required: false, message: "Please enter a phone number" },
-              { pattern: /^[0-9]+$/, message: "Phone number must contain only numbers" }, // Validation for numeric input
-            ]}
-          >
-            <Input
-              addonBefore={<Select defaultValue="+49" options={countryCodes} style={{ width: 80 }} onChange={(value) => console.log("Selected WhatsApp country code:", value)} />}
-              placeholder="Enter WhatsApp number"
+      <DialogTitle>Add New Youth</DialogTitle>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <DialogContent>
+          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: 'repeat(2, 1fr)', my: 2 }}>
+            <Controller
+              name="first_name"
+              control={control}
+              rules={{ required: "First name is required" }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  label="First Name"
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                  fullWidth
+                />
+              )}
             />
-          </Form.Item>
-        )}
-        <Form.Item label="City in Germany" name="cityInGermany" rules={[{ required: true, message: "Please enter a city in Germany" }]}>
-          <Input />
-        </Form.Item>
-        <Form.Item label="City in India" name="cityInIndia" rules={[{ required: true, message: "Please enter a city in India" }]}>
-          <Input />
-        </Form.Item>
-        <Form.Item label="Education/Work in Germany" name="educationInGermany" rules={[{ required: true, message: "Please enter education/work details" }]}>
-          <Input />
-        </Form.Item>
-        <Form.Item label="Reference Name" name="refNameforSabha" rules={[{ required: true, message: "Please enter a reference name" }]}>
-          <Input />
-        </Form.Item>
-        <Form.Item label="Which Sabha do you attend" name="sabhaType">
-          <Radio.Group onChange={(e) => setSelectedSabha(e.target.value)} value={selectedSabha}>
-            <Radio value="Thursday">Thursday</Radio>
-            <Radio value="Friday">Friday</Radio>
-            <Radio value="Thursday and Friday">Thursday and Friday</Radio>
-          </Radio.Group>
-        </Form.Item>
-        <Form.Item>
-          <Button type="primary" htmlType="submit">
-            {youth ? "Update" : "Create"}
+
+            <Controller
+              name="last_name"
+              control={control}
+              rules={{ required: "Last name is required" }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  label="Last Name"
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                  fullWidth
+                />
+              )}
+            />
+
+            <Controller
+              name="email"
+              control={control}
+              rules={{ 
+                required: "Email is required",
+                pattern: {
+                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                  message: "Invalid email address"
+                }
+              }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  label="Email"
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                  fullWidth
+                />
+              )}
+            />
+
+            <Controller
+              name="phone_number"
+              control={control}
+              rules={{ required: "Phone number is required" }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  label="Phone Number"
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                  fullWidth
+                />
+              )}
+            />
+
+            <Controller
+              name="birth_date"
+              control={control}
+              rules={{ required: "Birth date is required" }}
+              render={({ field }) => (
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DatePicker
+                    label="Birth Date"
+                    value={dayjs(field.value)}
+                    onChange={(newValue) => {
+                      field.onChange(newValue ? dayjs(newValue).format('YYYY-MM-DD') : '');
+                    }}
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        error: !field.value,
+                        helperText: !field.value ? "Birth date is required" : ""
+                      }
+                    }}
+                  />
+                </LocalizationProvider>
+              )}
+            />
+
+            <Controller
+              name="educational_field"
+              control={control}
+              rules={{ required: "Educational field is required" }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  label="Educational Field"
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                  fullWidth
+                />
+              )}
+            />
+
+            <Controller
+              name="current_city_germany"
+              control={control}
+              rules={{ required: "Current city is required" }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  label="Current City (Germany)"
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                  fullWidth
+                />
+              )}
+            />
+
+            <Controller
+              name="origin_city_india"
+              control={control}
+              rules={{ required: "Origin city is required" }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  label="Origin City (India)"
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                  fullWidth
+                />
+              )}
+            />
+
+            <Controller
+              name="sabha_center_ids"
+              control={control}
+              rules={{ required: "Please select at least one sabha center" }}
+              render={({ field, fieldState }) => (
+                <FormControl fullWidth error={!!fieldState.error}>
+                  <InputLabel>Sabha Centers</InputLabel>
+                  <Select
+                    {...field}
+                    multiple
+                    input={<OutlinedInput label="Sabha Centers" />}
+                    renderValue={(selected) => (
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {selected.map((value) => (
+                          <Chip
+                            key={value}
+                            label={sabhaCenters.find(center => center.id === value)?.name}
+                          />
+                        ))}
+                      </Box>
+                    )}
+                  >
+                    {sabhaCenters.map((center) => (
+                      <MenuItem key={center.id} value={center.id}>
+                        {center.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+            />
+
+            <Controller
+              name="is_active"
+              control={control}
+              render={({ field }) => (
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={field.value}
+                      onChange={(e) => field.onChange(e.target.checked)}
+                    />
+                  }
+                  label="Active Status"
+                />
+              )}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button type="submit" variant="contained" color="primary">
+            Save
           </Button>
-          <Button style={{ marginLeft: "8px" }} onClick={onClose}>
-            Cancel
-          </Button>
-        </Form.Item>
-      </Form>
-    </Modal>
+        </DialogActions>
+      </form>
+    </Dialog>
   );
 }

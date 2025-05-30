@@ -1,64 +1,156 @@
-import { Card, Collapse, Row, Col } from "antd";
+import { 
+  Box, 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  Typography, 
+  Accordion, 
+  AccordionSummary, 
+  AccordionDetails
+} from "@mui/material";
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import CakeIcon from '@mui/icons-material/Cake';
+import EventIcon from '@mui/icons-material/Event';
 import { youthType, sabhaType } from "../../types";
 import { youthdata } from "../assets/dummydata";
 import { sabhaData } from "../assets/dummydata";
-import { startOfWeek, endOfWeek, isWithinInterval, format } from "date-fns";
+import dayjs from 'dayjs';
+import isBetween from 'dayjs/plugin/isBetween';
+import weekOfYear from 'dayjs/plugin/weekOfYear';
 
-const { Panel } = Collapse;
+dayjs.extend(isBetween);
+dayjs.extend(weekOfYear);
 
-const todayDate: Date = new Date();
-const startOfTheWeekDate = startOfWeek(todayDate);
-const endOfTheWeekDate = endOfWeek(todayDate);
-const todayInString = format(todayDate, "dd-MM-yyyy");
+const todayDate = dayjs();
+const startOfTheWeekDate = todayDate.startOf('week');
+const endOfTheWeekDate = todayDate.endOf('week');
+const todayInString = todayDate.format('DD-MM-YYYY');
 
 const youthsWithBirthdayThisWeek = youthdata.filter((youth: youthType) => {
-  const userBirthDate = youth.birthdate;
-  return isWithinInterval(userBirthDate, {
-    start: startOfTheWeekDate,
-    end: endOfTheWeekDate,
-  });
+  const userBirthDate = dayjs(youth.birthdate);
+  return userBirthDate.isBetween(startOfTheWeekDate, endOfTheWeekDate, 'day', '[]');
 });
 
 function Dashboard() {
   return (
-    <div style={{ padding: "20px" }}>
-      <h3>Dashboard</h3>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h5" gutterBottom>
+        Dashboard
+      </Typography>
 
-      <Row gutter={[16, 16]}>
+      <Box sx={{ 
+        display: 'flex', 
+        flexWrap: 'wrap', 
+        gap: 3
+      }}>
         {/* Birthdays Section */}
-        <Col xs={24} sm={12} lg={12}>
-          <Card title="Birthdays This Week" hoverable>
-            <Collapse>
-              {youthsWithBirthdayThisWeek.map((youth: youthType) => {
-                const youthBirthdayToday = format(youth.birthdate, "dd-MM-yyyy");
-                return (
-                  <Panel header={youthBirthdayToday === todayInString ? `🎉 Today: ${youth.firstName} ${youth.lastName}` : `${youth.firstName} ${youth.lastName}`} key={youth.youthId}>
-                    <p>Birthday: {youthBirthdayToday}</p>
-                  </Panel>
-                );
-              })}
-            </Collapse>
+        <Box sx={{ 
+          flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)' },
+          minWidth: { xs: '100%', sm: 'calc(50% - 12px)' }
+        }}>
+          <Card 
+            elevation={3}
+            sx={{ 
+              height: '100%',
+              '&:hover': {
+                boxShadow: 6,
+                transition: 'box-shadow 0.3s ease-in-out'
+              }
+            }}
+          >
+            <CardHeader 
+              title="Birthdays This Week"
+              avatar={<CakeIcon color="primary" />}
+            />
+            <CardContent>
+              {youthsWithBirthdayThisWeek.length === 0 ? (
+                <Typography color="textSecondary">
+                  No birthdays this week
+                </Typography>
+              ) : (
+                youthsWithBirthdayThisWeek.map((youth: youthType) => {
+                  const youthBirthdayToday = dayjs(youth.birthdate).format('DD-MM-YYYY');
+                  const isToday = youthBirthdayToday === todayInString;
+
+                  return (
+                    <Accordion key={youth.youthId} sx={{ mb: 1 }}>
+                      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                        <Typography>
+                          {isToday ? '🎉 Today: ' : ''}{youth.firstName} {youth.lastName}
+                        </Typography>
+                      </AccordionSummary>
+                      <AccordionDetails>
+                        <Typography>
+                          Birthday: {youthBirthdayToday}
+                        </Typography>
+                      </AccordionDetails>
+                    </Accordion>
+                  );
+                })
+              )}
+            </CardContent>
           </Card>
-        </Col>
+        </Box>
 
         {/* Upcoming Events Section */}
-        <Col xs={24} sm={12} lg={12}>
-          <Card title="Upcoming Events" hoverable>
-            <Collapse accordion>
-              {sabhaData.map((sabha: sabhaType, index: number) => (
-                <Panel header={`${sabha.title}: ${sabha.topic}`} key={index}>
-                  <p>Date: {format(sabha.date, "dd-MM-yyyy")}</p>
-                  <p>Topic: {sabha.topic}</p>
-                  <h5>Speaker(s):</h5>
-                  <p>{sabha.speaker.speakerOne}</p>
-                  <p>{sabha.speaker.speakerTwo}</p>
-                </Panel>
-              ))}
-            </Collapse>
+        <Box sx={{ 
+          flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)' },
+          minWidth: { xs: '100%', sm: 'calc(50% - 12px)' }
+        }}>
+          <Card 
+            elevation={3}
+            sx={{ 
+              height: '100%',
+              '&:hover': {
+                boxShadow: 6,
+                transition: 'box-shadow 0.3s ease-in-out'
+              }
+            }}
+          >
+            <CardHeader 
+              title="Upcoming Events"
+              avatar={<EventIcon color="primary" />}
+            />
+            <CardContent>
+              {sabhaData.length === 0 ? (
+                <Typography color="textSecondary">
+                  No upcoming events
+                </Typography>
+              ) : (
+                sabhaData.map((sabha: sabhaType, index: number) => (
+                  <Accordion key={index} sx={{ mb: 1 }}>
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                      <Typography>
+                        {sabha.title}: {sabha.topic}
+                      </Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <Typography>
+                          Date: {dayjs(sabha.date).format('DD-MM-YYYY')}
+                        </Typography>
+                        <Typography>
+                          Topic: {sabha.topic}
+                        </Typography>
+                        <Typography variant="subtitle2" sx={{ mt: 1 }}>
+                          Speakers:
+                        </Typography>
+                        <Typography>
+                          {sabha.speaker.speakerOne}
+                        </Typography>
+                        <Typography>
+                          {sabha.speaker.speakerTwo}
+                        </Typography>
+                      </Box>
+                    </AccordionDetails>
+                  </Accordion>
+                ))
+              )}
+            </CardContent>
           </Card>
-        </Col>
-      </Row>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   );
 }
 

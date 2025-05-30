@@ -1,11 +1,25 @@
-import { Table, Checkbox, Button, DatePicker, message, Input, Form } from "antd";
-import { useState, useEffect } from "react";
-import dayjs, { Dayjs } from "dayjs";
-import { youthType } from "../../types";
-
-interface YouthsAttendence {
-  youths: youthType[];
-}
+import { useState, useEffect, useMemo } from "react";
+import dayjs from "dayjs";
+import { MaterialReactTable, type MRT_ColumnDef } from 'material-react-table';
+import { Link } from 'react-router-dom';
+import { 
+  Button, 
+  TextField,
+  Box,
+  Stack,
+  Typography,
+  Checkbox,
+  Alert,
+  Snackbar,
+  Paper
+} from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import axios from 'axios';
+import useSabhaSelectorStore from '../../store/useSabhaSelectorStore';
+import useEventStore from '../../store/useEventStore';
+import useYouthsStore from '../../store/useYouthsStore';
 
 interface AttendanceRecord {
   [youthName: string]: "present" | "absent";
@@ -19,126 +33,279 @@ interface AttendanceByDate {
   };
 }
 
-const Attendance = ({ youths }: YouthsAttendence) => {
+interface TableData {
+  id: number;
+  name: string;
+  present: boolean;
+}
+
+interface Message {
+  text: string;
+  severity: 'success' | 'error';
+}
+
+const Attendance = () => {
   const [attendanceByDate, setAttendanceByDate] = useState<AttendanceByDate>({});
-  const [selectedDate, setSelectedDate] = useState<Dayjs>(dayjs());
   const [attendance, setAttendance] = useState<AttendanceRecord>({});
   const [sabhaTopic, setSabhaTopic] = useState("");
   const [sabhaSpeakers, setSabhaSpeakers] = useState("");
-  const [form] = Form.useForm();
+  const [sabhaDate, setSabhaDate] = useState(dayjs());
+  const [isSabhaSaved, setIsSabhaSaved] = useState(false);
+  const [message, setMessage] = useState<Message | null>(null);
+
+  const selectedSabhaCenter = useSabhaSelectorStore(state => state.selectedCity);
+  const setCurrentSabhaId = useEventStore(state => state.setCurrentSabhaId);
+  const { youths, loading: youthsLoading, fetchYouths } = useYouthsStore();
+
+  // Fetch youths when sabha center changes
+  useEffect(() => {
+    if (selectedSabhaCenter) {
+      fetchYouths();
+    }
+  }, [selectedSabhaCenter, fetchYouths]);
 
   useEffect(() => {
-    const dateKey = selectedDate.format("DD-MM-YYYY");
+    const dateKey = sabhaDate.format("DD-MM-YYYY");
     if (attendanceByDate[dateKey]) {
       setAttendance(attendanceByDate[dateKey].attendance);
       setSabhaTopic(attendanceByDate[dateKey].sabhaTopic);
       setSabhaSpeakers(attendanceByDate[dateKey].sabhaSpeakers);
-      form.setFieldsValue({
-        sabhaTopic: attendanceByDate[dateKey].sabhaTopic,
-        sabhaSpeakers: attendanceByDate[dateKey].sabhaSpeakers,
-      });
+      setIsSabhaSaved(true);
     } else {
       const initial: AttendanceRecord = {};
-      youths.forEach((y) => (initial[`${y.firstName} ${y.lastName}`] = "absent"));
+      youths.forEach((y) => (initial[`${y.first_name} ${y.last_name}`] = "absent"));
       setAttendance(initial);
       setSabhaTopic("");
       setSabhaSpeakers("");
-      form.resetFields();
+      setIsSabhaSaved(false);
+    }
+  }, [sabhaDate, youths, attendanceByDate]);
+
+  const showMessage = (text: string, severity: 'success' | 'error') => {
+    setMessage({ text, severity });
+  };
+
+  const handleCloseMessage = () => {
+    setMessage(null);
+  };
+
+  const columns = useMemo<MRT_ColumnDef<TableData>[]>(
+    () => [
+      {
+        accessorKey: 'name',
+        header: 'Youth Name',
+      },
+      {
+        accessorKey: 'present',
+        header: 'Present',
+        Cell: ({ row }) => (
+          <Checkbox
+            checked={attendance[row.original.name] === "present"}
+            onChange={(e) => {
+              setAttendance((prev) => ({
+                ...prev,
+                [row.original.name]: e.target.checked ? "present" : "absent",
+              }));
+            }}
+          />
+        ),
+      },
+    ],
+    [attendance]
+  );
+
+  const tableData: TableData[] = useMemo(
+    () => youths.map((y) => ({
+      id: y.id,
+      name: `${y.first_name} ${y.last_name}`,
+      present: attendance[`${y.first_name} ${y.last_name}`] === "present",
+    })),
+    [youths, attendance]
+  );
+
+  const handleSaveSabha = async () => {
+    if (!sabhaTopic || !sabhaSpeakers || !selectedSabhaCenter) {
+      showMessage('Please fill in all Sabha details and select a Sabha center', 'error');
+      return;
     }
 
-    console.log(attendanceByDate);
-  }, [selectedDate, youths, attendanceByDate, form]);
-
-  const columns = [
-    {
-      title: "Youth Name",
-      dataIndex: "name",
-      key: "name",
-    },
-    {
-      title: "Present",
-      dataIndex: "present",
-      key: "present",
-      render: (_: any, record: { name: string }) => (
-        <Checkbox
-          checked={attendance[record.name] === "present"}
-          onChange={(e) => {
-            setAttendance((prev) => ({
-              ...prev,
-              [record.name]: e.target.checked ? "present" : "absent",
-            }));
-          }}
-        />
-      ),
-    },
-  ];
-
-  const tableData = youths.map((y) => ({
-    key: y.youthId,
-    name: `${y.firstName} ${y.lastName}`,
-  }));
-
-  const disabledDate = (current: Dayjs) => current && current > dayjs().endOf("day");
-
-  const handleSave = async () => {
     try {
-      const values = await form.validateFields();
-      const dateKey = selectedDate.format("DD-MM-YYYY");
+      const response = await axios.post('https://onetouch-backend-mi70.onrender.com/api/sabhas/', {
+        topic: sabhaTopic,
+        speaker_name: sabhaSpeakers,
+        date: sabhaDate.format('YYYY-MM-DD'),
+        sabha_center_id: selectedSabhaCenter
+      });
+
+      setCurrentSabhaId(response.data.sabha_id);
+      setIsSabhaSaved(true);
+      showMessage(response.data.message, 'success');
+    } catch (error) {
+      console.error('Error saving sabha:', error);
+      showMessage('Failed to save Sabha details', 'error');
+    }
+  };
+
+  const handleSaveAttendance = async () => {
+    const currentSabhaId = useEventStore.getState().currentSabhaId;
+
+    if (!currentSabhaId) {
+      showMessage('Please save Sabha details first', 'error');
+      return;
+    }
+
+    try {
+      const attendanceData = youths.map(youth => ({
+        youth_id: youth.id,
+        is_present: attendance[`${youth.first_name} ${youth.last_name}`] === "present"
+      }));
+      console.log(attendanceData);
+
+      await axios.post('https://onetouch-backend-mi70.onrender.com/api/attendance/', {
+        sabha_id: currentSabhaId,
+        attendance_data: attendanceData
+      });
+
+      const dateKey = sabhaDate.format("DD-MM-YYYY");
       setAttendanceByDate((prev) => ({
         ...prev,
         [dateKey]: {
           attendance,
-          sabhaTopic: values.sabhaTopic,
-          sabhaSpeakers: values.sabhaSpeakers,
+          sabhaTopic,
+          sabhaSpeakers,
         },
       }));
-      setSabhaTopic(values.sabhaTopic);
-      setSabhaSpeakers(values.sabhaSpeakers);
-      message.success("Attendance and Sabha info saved!");
+
+      showMessage('Attendance saved successfully!', 'success');
     } catch (error) {
-      // Validation failed, do nothing
+      console.error('Error saving attendance:', error);
+      showMessage('Failed to save attendance', 'error');
     }
   };
 
+  if (!selectedSabhaCenter) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Stack spacing={2}>
+          <Alert severity="info">Please select a Sabha Center first to view attendance.</Alert>
+          <Button 
+            variant="contained" 
+            component={Link} 
+            to="/sabhacenterselector"
+          >
+            Select Sabha Center
+          </Button>
+        </Stack>
+      </Box>
+    );
+  }
+
   return (
-    <div
-      style={{
+    <Box
+      sx={{
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "flex-startr",
+        pt: 3,
       }}
     >
-      <div>
-        <h3>Attendance</h3>
-        <div style={{ marginBottom: 16 }}>
-          <span style={{ marginRight: 8 }}>Select Sabha Day:</span>
-          <DatePicker value={selectedDate} onChange={(date) => date && setSelectedDate(date)} disabledDate={disabledDate} allowClear={false} format="DD-MM-YYYY" />
-        </div>
-        <Form
-          form={form}
-          layout="vertical"
-          initialValues={{
-            sabhaTopic,
-            sabhaSpeakers,
-          }}
-          style={{ marginBottom: 16, maxWidth: 400 }}
+      <Paper sx={{ width: "100%", maxWidth: 800, px: 3, py: 2 }}>
+        <Typography variant="h4" gutterBottom>
+          Attendance
+        </Typography>
+        
+        <Stack spacing={3}>
+          <Stack spacing={2}>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DatePicker
+                label="Sabha Date"
+                value={sabhaDate}
+                onChange={(newValue) => newValue && setSabhaDate(newValue)}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    margin: 'normal'
+                  }
+                }}
+                disabled={isSabhaSaved}
+              />
+            </LocalizationProvider>
+            <TextField
+              label="Sabha Topic"
+              value={sabhaTopic}
+              onChange={(e) => setSabhaTopic(e.target.value)}
+              required
+              fullWidth
+              disabled={isSabhaSaved}
+            />
+            <TextField
+              label="Sabha Speakers"
+              value={sabhaSpeakers}
+              onChange={(e) => setSabhaSpeakers(e.target.value)}
+              required
+              fullWidth
+              disabled={isSabhaSaved}
+            />
+            <Button 
+              variant="contained" 
+              onClick={handleSaveSabha}
+              fullWidth
+              disabled={isSabhaSaved}
+            >
+              Save Sabha Details
+            </Button>
+          </Stack>
+
+          {isSabhaSaved && (
+            <Box sx={{ mt: 2 }}>
+              {youthsLoading ? (
+                <Typography>Loading youths...</Typography>
+              ) : youths.length === 0 ? (
+                <Alert severity="info">No youths found for this Sabha center.</Alert>
+              ) : (
+                <MaterialReactTable
+                  columns={columns}
+                  data={tableData}
+                  muiTablePaperProps={{
+                    elevation: 0,
+                    sx: {
+                      borderRadius: '0',
+                      border: '1px solid #e0e0e0',
+                    },
+                  }}
+                  renderTopToolbarCustomActions={() => (
+                    <Button
+                      color="primary"
+                      onClick={handleSaveAttendance}
+                      variant="contained"
+                      sx={{ m: 1 }}
+                    >
+                      Save Attendance
+                    </Button>
+                  )}
+                />
+              )}
+            </Box>
+          )}
+        </Stack>
+      </Paper>
+
+      <Snackbar 
+        open={!!message} 
+        autoHideDuration={6000} 
+        onClose={handleCloseMessage}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseMessage} 
+          severity={message?.severity}
+          sx={{ width: '100%' }}
         >
-          <Form.Item label="Sabha Topic" name="sabhaTopic" rules={[{ required: true, message: "Please enter the Sabha Topic" }]}>
-            <Input placeholder="Sabha Topic" value={sabhaTopic} onChange={(e) => setSabhaTopic(e.target.value)} />
-          </Form.Item>
-          <Form.Item label="Sabha Speakers" name="sabhaSpeakers" rules={[{ required: true, message: "Please enter the Speaker" }]}>
-            <Input placeholder="Speaker" value={sabhaSpeakers} onChange={(e) => setSabhaSpeakers(e.target.value)} />
-          </Form.Item>
-        </Form>
-        <Table columns={columns} dataSource={tableData} pagination={false} style={{ maxWidth: 400 }} size="middle" />
-        <Button type="primary" onClick={handleSave} style={{ marginTop: 16, width: "100%", maxWidth: 400 }}>
-          Save Attendance
-        </Button>
-        {/* <pre>{JSON.stringify(attendanceByDate, null, 2)}</pre> */}
-      </div>
-    </div>
+          {message?.text}
+        </Alert>
+      </Snackbar>
+    </Box>
   );
 };
 
