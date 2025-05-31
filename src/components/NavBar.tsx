@@ -104,7 +104,12 @@ const Layout = () => {
   );
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: 'column',
+      height: '100vh',
+      overflow: 'hidden'
+    }}>
       <AppBar position="static" color="default">
         <Toolbar>
           {isMobile && (
@@ -155,28 +160,41 @@ const Layout = () => {
         </Toolbar>
       </AppBar>
 
-      {isMobile && (
-        <Drawer
-          variant="temporary"
-          anchor="left"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true, // Better open performance on mobile.
-          }}
-          sx={{
-            '& .MuiDrawer-paper': { width: 240 },
-          }}
-        >
-          {drawer}
-        </Drawer>
-      )}
+      <Box sx={{ 
+        flexGrow: 1,
+        overflow: 'hidden',
+        position: 'relative'
+      }}>
+        <Box sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          overflow: 'auto'
+        }}>
+          {tabItems.map((item, index) => (
+            <TabPanel key={index} value={value} index={index}>
+              {item.component}
+            </TabPanel>
+          ))}
+        </Box>
+      </Box>
 
-      {tabItems.map((item, index) => (
-        <TabPanel key={index} value={value} index={index}>
-          {item.component}
-        </TabPanel>
-      ))}
+      <Drawer
+        variant="temporary"
+        anchor="left"
+        open={mobileOpen}
+        onClose={handleDrawerToggle}
+        ModalProps={{
+          keepMounted: true,
+        }}
+        sx={{
+          '& .MuiDrawer-paper': { width: 240 },
+        }}
+      >
+        {drawer}
+      </Drawer>
     </Box>
   );
 };

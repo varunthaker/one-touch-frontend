@@ -68,7 +68,12 @@ const Report = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ 
+      p: 3,
+      height: '100%',
+      overflow: 'auto',
+      maxHeight: 'calc(100vh - 64px)' // Assuming a 64px header/navbar
+    }}>
       <Typography variant="h4" gutterBottom>Reports</Typography>
       
       <Box sx={{ mt: 2 }}>
