@@ -11,27 +11,36 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CakeIcon from '@mui/icons-material/Cake';
 import EventIcon from '@mui/icons-material/Event';
-import { youthType, sabhaType } from "../../types";
-import { youthdata } from "../assets/dummydata";
+import { sabhaType } from "../../types";
 import { sabhaData } from "../assets/dummydata";
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
+import useYouthsStore from '../../store/useYouthsStore';
+import { useEffect, useMemo } from 'react';
 
 dayjs.extend(isBetween);
 dayjs.extend(weekOfYear);
 
-const todayDate = dayjs();
-const startOfTheWeekDate = todayDate.startOf('week');
-const endOfTheWeekDate = todayDate.endOf('week');
-const todayInString = todayDate.format('DD-MM-YYYY');
-
-const youthsWithBirthdayThisWeek = youthdata.filter((youth: youthType) => {
-  const userBirthDate = dayjs(youth.birthdate);
-  return userBirthDate.isBetween(startOfTheWeekDate, endOfTheWeekDate, 'day', '[]');
-});
-
 function Dashboard() {
+  const { youths, loading, error, fetchYouths } = useYouthsStore();
+
+  useEffect(() => {
+    fetchYouths();
+  }, [fetchYouths]);
+
+  const todayDate = dayjs();
+  const startOfTheWeekDate = todayDate.startOf('week');
+  const endOfTheWeekDate = todayDate.endOf('week');
+  const todayInString = todayDate.format('DD-MM-YYYY');
+
+  const youthsWithBirthdayThisWeek = useMemo(() => {
+    return youths.filter((youth) => {
+      const userBirthDate = dayjs(youth.birth_date); // assuming the field is birth_date in the API
+      return userBirthDate.isBetween(startOfTheWeekDate, endOfTheWeekDate, 'day', '[]');
+    });
+  }, [youths, startOfTheWeekDate, endOfTheWeekDate]);
+
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h5" gutterBottom>
@@ -63,20 +72,24 @@ function Dashboard() {
               avatar={<CakeIcon color="primary" />}
             />
             <CardContent>
-              {youthsWithBirthdayThisWeek.length === 0 ? (
+              {loading ? (
+                <Typography>Loading birthdays...</Typography>
+              ) : error ? (
+                <Typography color="error">Error loading birthdays</Typography>
+              ) : youthsWithBirthdayThisWeek.length === 0 ? (
                 <Typography color="textSecondary">
                   No birthdays this week
                 </Typography>
               ) : (
-                youthsWithBirthdayThisWeek.map((youth: youthType) => {
-                  const youthBirthdayToday = dayjs(youth.birthdate).format('DD-MM-YYYY');
+                youthsWithBirthdayThisWeek.map((youth) => {
+                  const youthBirthdayToday = dayjs(youth.birth_date).format('DD-MM-YYYY');
                   const isToday = youthBirthdayToday === todayInString;
 
                   return (
-                    <Accordion key={youth.youthId} sx={{ mb: 1 }}>
+                    <Accordion key={youth.id} sx={{ mb: 1 }}>
                       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                         <Typography>
-                          {isToday ? '🎉 Today: ' : ''}{youth.firstName} {youth.lastName}
+                          {isToday ? '🎉 Today: ' : ''}{youth.first_name} {youth.last_name}
                         </Typography>
                       </AccordionSummary>
                       <AccordionDetails>
