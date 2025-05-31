@@ -13,7 +13,8 @@ import {
   ListItemText,
   AppBar,
   Toolbar,
-  Typography
+  Typography,
+  Tooltip
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -22,7 +23,10 @@ import EventNoteIcon from '@mui/icons-material/EventNote';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import EventIcon from '@mui/icons-material/Event';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
 import useSabhaSelectorStore from '../store/useSabhaSelectorStore';
+import useThemeStore from '../store/useThemeStore';
 import Dashboard from "./dashboard/Dashboard";
 import Youths from "./youths/Youths";
 import Attendance from "./attendance/Attendance";
@@ -72,6 +76,7 @@ const Layout = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const selectedSabhaCenterName = useSabhaSelectorStore(state => state.selectedSabhaCenterName);
+  const { isDarkMode, toggleTheme } = useThemeStore();
 
   const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
@@ -116,6 +121,13 @@ const Layout = () => {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             {selectedSabhaCenterName || 'No Sabha Center is Selected'}
           </Typography>
+          
+          <Tooltip title={isDarkMode ? 'Light mode' : 'Dark mode'}>
+            <IconButton sx={{ ml: 1 }} onClick={toggleTheme} color="inherit">
+              {isDarkMode ? <Brightness7Icon /> : <Brightness4Icon />}
+            </IconButton>
+          </Tooltip>
+
           {!isMobile && (
             <Tabs
               value={value}

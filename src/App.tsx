@@ -13,14 +13,44 @@ import Login from "./components/login/Login";
 // import { useState } from "react";
 import SabhaSelector from "./components/sabhaCenter/SabhaSelector";
 // import { YouthInfoForm } from "./components/forms/youthForm";
+import { ThemeProvider, createTheme } from "@mui/material";
+import CssBaseline from "@mui/material/CssBaseline";
+import useThemeStore from "./store/useThemeStore";
 
 function App() {
+  const isDarkMode = useThemeStore((state) => state.isDarkMode);
+
+  const lightTheme = createTheme({
+    palette: {
+      mode: 'light',
+      primary: {
+        main: '#1976d2',
+      },
+      secondary: {
+        main: '#dc004e',
+      },
+    },
+  });
+
+  const darkTheme = createTheme({
+    palette: {
+      mode: 'dark',
+      primary: {
+        main: '#90caf9',
+      },
+      secondary: {
+        main: '#f48fb1',
+      },
+    },
+  });
+
   // const [selectedYouthId, setSelectedYouthId] = useState<number | null>(null);
 
   // const selectedYouth = youthdata?.find((youth: youthType) => youth.youthId === selectedYouthId);
 
   return (
-    <>
+    <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
+      <CssBaseline />
       <Router>
         <Routes>
           <Route path="/" element={<SabhaSelector />} />
@@ -57,8 +87,8 @@ function App() {
             <Route path="/attendance" element={<Attendance youths={youthdata} />} />
             <Route path="/report" element={<Report />} /> */}
         </Routes>
-      </Router >
-    </>
+      </Router>
+    </ThemeProvider>
   );
 }
 
