@@ -1,6 +1,10 @@
 import { Box, Accordion, AccordionSummary, AccordionDetails, Typography } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { BarChart } from '@mui/x-charts/BarChart';
+import { MaterialReactTable, type MRT_ColumnDef } from 'material-react-table';
+import useYouthsStore from '../../store/useYouthsStore';
+import { useEffect, useMemo, useState } from 'react';
+
 interface SabhaData {
   date: string;
   youthCount: number;
@@ -12,6 +16,13 @@ interface KaryakartaData {
   name: string;
   youthCount: number;
   youths: string[];
+}
+
+interface Youth {
+  first_name: string;
+  last_name: string;
+  email: string;
+  created_at: string;
 }
 
 // Dummy data for Sabha Report
@@ -57,6 +68,44 @@ const karyakartaData: KaryakartaData[] = [
 ];
 
 const Report = () => {
+  const { youths, fetchYouths } = useYouthsStore();
+  const [newYouths, setNewYouths] = useState<Youth[]>([]);
+
+  useEffect(() => {
+    fetchYouths();
+  }, [fetchYouths]);
+
+  useEffect(() => {
+    // Sort youths by created_at date and take top 5
+    const sortedYouths = [...youths]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 5);
+    setNewYouths(sortedYouths);
+  }, [youths]);
+
+  const columns = useMemo<MRT_ColumnDef<Youth>[]>(
+    () => [
+      {
+        accessorKey: 'first_name',
+        header: 'First Name',
+      },
+      {
+        accessorKey: 'last_name',
+        header: 'Last Name',
+      },
+      {
+        accessorKey: 'email',
+        header: 'Email',
+      },
+      {
+        accessorKey: 'created_at',
+        header: 'Created Date',
+        Cell: ({ cell }) => new Date(cell.getValue<string>()).toLocaleDateString(),
+      },
+    ],
+    []
+  );
+
   const getSabhaTooltip = (index: number) => {
     const data = sabhaData[index];
     return `${data.youthCount} youths\nTopic: ${data.topic}\nSpeaker: ${data.speaker}`;
@@ -77,7 +126,7 @@ const Report = () => {
       <Typography variant="h4" gutterBottom>Reports</Typography>
       
       <Box sx={{ mt: 2 }}>
-        <Accordion>
+        <Accordion sx={{ mt: 2 }}>
           <AccordionSummary
             expandIcon={<ExpandMoreIcon />}
             aria-controls="sabha-report-content"
@@ -152,6 +201,32 @@ const Report = () => {
                 }}
               />
             </Box>
+          </AccordionDetails>
+        </Accordion>
+        <Accordion sx={{ mt: 2 }}>
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon />}
+            aria-controls="new-youths-content"
+            id="new-youths-header"
+          >
+            <Typography variant="h6">New Youths</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <MaterialReactTable
+              columns={columns}
+              data={newYouths}
+              enableTopToolbar={false}
+              enableBottomToolbar={false}
+              enableColumnFilters={false}
+              enableColumnActions={false}
+              enableSorting={false}
+              enablePagination={false}
+              muiTableProps={{
+                sx: {
+                  border: '1px solid rgba(81, 81, 81, 0.1)',
+                },
+              }}
+            />
           </AccordionDetails>
         </Accordion>
       </Box>
