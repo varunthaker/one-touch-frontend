@@ -98,6 +98,10 @@ const Report = () => {
         header: 'Email',
       },
       {
+        accessorKey: 'phone_number',
+        header: 'Phone Number',
+      },
+      {
         accessorKey: 'created_at',
         header: 'Created Date',
         Cell: ({ cell }) => new Date(cell.getValue<string>()).toLocaleDateString(),
