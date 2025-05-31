@@ -1,4 +1,4 @@
-import { Box, Accordion, AccordionSummary, AccordionDetails, Typography, Tooltip, Paper } from '@mui/material';
+import { Box, Accordion, AccordionSummary, AccordionDetails, Typography } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { BarChart } from '@mui/x-charts/BarChart';
 interface SabhaData {
