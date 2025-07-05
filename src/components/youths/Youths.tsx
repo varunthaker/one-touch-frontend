@@ -8,17 +8,21 @@ import {
   Stack,
   Paper,
   Alert,
-  CircularProgress
+  CircularProgress,
+  IconButton,
 } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import { Add as AddIcon, Edit as EditIcon } from '@mui/icons-material';
 import useYouthsStore from "../../store/useYouthsStore";
 import useSabhaSelectorStore from "../../store/useSabhaSelectorStore";
 import { Link } from "react-router-dom";
 
 const Youths = () => {
-  const [isModalVisible, setIsModalVisible] = useState(false);
   const { youths, loading, error, fetchYouths } = useYouthsStore();
   const selectedCity = useSabhaSelectorStore((state) => state.selectedCity);
+  const [formDialogOpen, setFormDialogOpen] = useState(false);
+  const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
+  const [formInitialValues, setFormInitialValues] = useState<any>(null);
+  const [editId, setEditId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchYouths();
@@ -65,9 +69,70 @@ const Youths = () => {
           <Typography>{cell.getValue<boolean>() ? 'Active' : 'Inactive'}</Typography>
         ),
       },
+      {
+        id: 'edit',
+        header: 'Edit',
+        Cell: ({ row }) => (
+          <IconButton color="primary" onClick={() => handleEditClick(row.original)}>
+            <EditIcon />
+          </IconButton>
+        ),
+      },
     ],
     []
   );
+
+  const handleAddClick = () => {
+    setFormMode('add');
+    setFormInitialValues(null);
+    setEditId(null);
+    setFormDialogOpen(true);
+  };
+
+  const handleEditClick = (row: any) => {
+    setFormMode('edit');
+    setFormInitialValues({
+      ...row,
+      sabha_center_ids: Array.isArray(row.sabha_centers)
+        ? row.sabha_centers.map((c: any) => c.id)
+        : [],
+    });
+    setEditId(row.id);
+    setFormDialogOpen(true);
+  };
+
+  const handleFormClose = () => {
+    setFormDialogOpen(false);
+    setFormInitialValues(null);
+    setEditId(null);
+  };
+
+  const handleFormSubmit = async (data: any) => {
+    if (formMode === 'add') {
+      // Let YouthInfoForm handle add (default)
+      return;
+    } else if (formMode === 'edit' && editId) {
+      try {
+        await fetch(`https://onetouch-backend-mi70.onrender.com/api/youths/${editId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...data,
+            is_active: Boolean(data.is_active),
+            karyakarta_id: data.karyakarta_id || 0,
+            created_at: data.created_at || new Date().toISOString(),
+            sabha_center_ids: data.sabha_center_ids || [0],
+          })
+        });
+        setFormDialogOpen(false);
+        setEditId(null);
+        setFormInitialValues(null);
+        fetchYouths();
+      } catch (error) {
+        console.error('Error editing youth:', error);
+      }
+    }
+  };
 
   if (!selectedCity) {
     return (
@@ -102,7 +167,7 @@ const Youths = () => {
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => setIsModalVisible(true)}
+            onClick={handleAddClick}
           >
             Add New Youth
           </Button>
@@ -133,8 +198,12 @@ const Youths = () => {
       </Paper>
       
       <YouthInfoForm
-        visible={isModalVisible} 
-        onClose={() => setIsModalVisible(false)} 
+        visible={formDialogOpen}
+        onClose={handleFormClose}
+        initialValues={formInitialValues}
+        onSubmit={formMode === 'edit' ? handleFormSubmit : undefined}
+        dialogTitle={formMode === 'add' ? 'Add New Youth' : 'Edit Youth'}
+        submitButtonText={formMode === 'add' ? 'Save' : 'Update'}
       />
     </Box>
   );

@@ -42,13 +42,17 @@ interface YouthFormData {
 interface YouthInfoFormProps {
   visible: boolean;
   onClose: () => void;
+  initialValues?: Partial<YouthFormData>;
+  onSubmit?: (data: YouthFormData) => Promise<void>;
+  dialogTitle?: string;
+  submitButtonText?: string;
 }
 
-export function YouthInfoForm({ visible, onClose }: YouthInfoFormProps) {
+export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialogTitle = 'Add New Youth', submitButtonText = 'Save' }: YouthInfoFormProps) {
   const { sabhaCenters, fetchSabhaCenters } = useSabhaCenterStore();
   const { fetchYouths } = useYouthsStore();
   const { handleSubmit, control, reset } = useForm<YouthFormData>({
-    defaultValues: {
+    defaultValues: initialValues || {
       first_name: "",
       last_name: "",
       email: "",
@@ -66,10 +70,27 @@ export function YouthInfoForm({ visible, onClose }: YouthInfoFormProps) {
   useEffect(() => {
     if (visible) {
       fetchSabhaCenters();
+      if (initialValues) {
+        reset({ ...initialValues });
+      } else {
+        reset({
+          first_name: "",
+          last_name: "",
+          email: "",
+          phone_number: "",
+          birth_date: dayjs().format('YYYY-MM-DD'),
+          origin_city_india: "",
+          current_city_germany: "",
+          is_active: true,
+          karyakarta_id: 1,
+          educational_field: "",
+          sabha_center_ids: [],
+        });
+      }
     }
-  }, [visible, fetchSabhaCenters]);
+  }, [visible, fetchSabhaCenters, initialValues, reset]);
 
-  const onSubmit = async (data: YouthFormData) => {
+  const defaultOnSubmit = async (data: YouthFormData) => {
     try {
       await axios.post('https://onetouch-backend-mi70.onrender.com/api/youths/', {
         ...data,
@@ -91,8 +112,8 @@ export function YouthInfoForm({ visible, onClose }: YouthInfoFormProps) {
       maxWidth="md"
       fullWidth
     >
-      <DialogTitle>Add New Youth</DialogTitle>
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <DialogTitle>{dialogTitle}</DialogTitle>
+      <form onSubmit={handleSubmit(onSubmit || defaultOnSubmit)}>
         <DialogContent>
           <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: 'repeat(2, 1fr)', my: 2 }}>
             <Controller
@@ -282,7 +303,7 @@ export function YouthInfoForm({ visible, onClose }: YouthInfoFormProps) {
         <DialogActions>
           <Button onClick={onClose}>Cancel</Button>
           <Button type="submit" variant="contained" color="primary">
-            Save
+            {submitButtonText}
           </Button>
         </DialogActions>
       </form>
