@@ -5,13 +5,16 @@ import {
   Dialog, 
   DialogTitle, 
   DialogContent, 
+  DialogActions,
   Box,
   Alert,
   Typography,
   IconButton,
-  Stack
+  Stack,
+  TextField,
+  Checkbox,  
 } from '@mui/material';
-import { Close as CloseIcon } from '@mui/icons-material';
+import { Close as CloseIcon, Add as AddIcon, Group as GroupIcon } from '@mui/icons-material';
 import useSabhaStore from '../../store/useSabhaStore';
 import useYouthsStore from '../../store/useYouthsStore';
 import useSabhaSelectorStore from '../../store/useSabhaSelectorStore';
@@ -21,6 +24,15 @@ import { Link } from 'react-router-dom';
 const SabhaList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSabha, setSelectedSabha] = useState<number | null>(null);
+  const [createSabhaDialogOpen, setCreateSabhaDialogOpen] = useState(false);
+  const [attendanceDialogOpen, setAttendanceDialogOpen] = useState(false);
+  const [selectedSabhaForAttendance, setSelectedSabhaForAttendance] = useState<any>(null);
+  const [attendanceData, setAttendanceData] = useState<{[key: number]: boolean}>({});
+  const [formData, setFormData] = useState({
+    topic: '',
+    speaker_name: '',
+    date: dayjs().format('YYYY-MM-DD')
+  });
 
   const { sabhas, loading: sabhasLoading, error: sabhasError, fetchSabhas } = useSabhaStore();
   const { youths, loading: youthsLoading, fetchYouths } = useYouthsStore();
@@ -68,11 +80,20 @@ const SabhaList = () => {
             >
               View Attendees
             </Button>
+            <Button
+              variant="contained"
+              color="secondary"
+              size="small"
+              startIcon={<GroupIcon />}
+              onClick={() => handleEditAttendees(row.original)}
+            >
+              Edit Attendees
+            </Button>
           </Box>
         ),
       },
     ],
-    []
+    [youths]
   );
 
   const youthColumns = useMemo<MRT_ColumnDef<any>[]>(
@@ -91,6 +112,128 @@ const SabhaList = () => {
       },
     ],
     []
+  );
+
+  const handleCreateSabha = () => {
+    setCreateSabhaDialogOpen(true);
+  };
+
+  const handleFormInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleFormSubmit = async () => {
+    try {
+      await fetch('https://onetouch-backend-mi70.onrender.com/api/sabhas/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          sabha_center_id: selectedSabhaCenter
+        })
+      });
+      setCreateSabhaDialogOpen(false);
+      setFormData({
+        topic: '',
+        speaker_name: '',
+        date: dayjs().format('YYYY-MM-DD')
+      });
+      fetchSabhas(); // Refresh the table
+    } catch (error) {
+      console.error('Error creating sabha:', error);
+    }
+  };
+
+  const handleFormClose = () => {
+    setCreateSabhaDialogOpen(false);
+    setFormData({
+      topic: '',
+      speaker_name: '',
+      date: dayjs().format('YYYY-MM-DD')
+    });
+  };
+
+  const handleEditAttendees = (sabha: any) => {
+    setSelectedSabhaForAttendance(sabha);
+    // Initialize attendance data with all youths as absent (false)
+    const initialAttendance: {[key: number]: boolean} = {};
+    youths.forEach((youth: any) => {
+      initialAttendance[youth.id] = false;
+    });
+    setAttendanceData(initialAttendance);
+    setAttendanceDialogOpen(true);
+  };
+
+  const handleAttendanceChange = (youthId: number, isPresent: boolean) => {
+    setAttendanceData(prev => ({
+      ...prev,
+      [youthId]: isPresent
+    }));
+  };
+
+  const handleSaveAttendance = async () => {
+    if (!selectedSabhaForAttendance) return;
+    
+    try {
+      const attendancePayload = {
+        sabha_id: selectedSabhaForAttendance.id,
+        attendance_data: youths.map((youth: any) => ({
+          youth_id: youth.id,
+          is_present: attendanceData[youth.id] || false
+        }))
+      };
+
+      await fetch('https://onetouch-backend-mi70.onrender.com/api/attendance/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(attendancePayload)
+      });
+
+      setAttendanceDialogOpen(false);
+      setSelectedSabhaForAttendance(null);
+      setAttendanceData({});
+    } catch (error) {
+      console.error('Error saving attendance:', error);
+    }
+  };
+
+  const handleAttendanceDialogClose = () => {
+    setAttendanceDialogOpen(false);
+    setSelectedSabhaForAttendance(null);
+    setAttendanceData({});
+  };
+
+  const attendanceColumns = useMemo<MRT_ColumnDef<any>[]>(
+    () => [
+      {
+        accessorKey: 'name',
+        header: 'Name',
+        Cell: ({ row }) => (
+          <Typography>
+            {row.original.first_name} {row.original.last_name}
+          </Typography>
+        ),
+      },
+      {
+        accessorKey: 'isPresent',
+        header: 'Is Present',
+        Cell: ({ row }) => (
+          <Checkbox
+            checked={attendanceData[row.original.id] || false}
+            onChange={(e) => handleAttendanceChange(row.original.id, e.target.checked)}
+          />
+        ),
+      },
+    ],
+    [attendanceData]
   );
 
   if (!selectedSabhaCenter) {
@@ -120,6 +263,17 @@ const SabhaList = () => {
 
   return (
     <Box sx={{ p: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h5">Sabha List</Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleCreateSabha}
+        >
+          Create New Sabha
+        </Button>
+      </Box>
+
       <MaterialReactTable
         columns={sabhaColumns}
         data={sabhas}
@@ -133,12 +287,52 @@ const SabhaList = () => {
             border: '1px solid #e0e0e0',
           },
         }}
-        renderTopToolbarCustomActions={() => (
-          <Typography variant="h6" component="div" sx={{ p: 2 }}>
-            Sabha List
-          </Typography>
-        )}
       />
+
+      <Dialog
+        open={createSabhaDialogOpen}
+        onClose={handleFormClose}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Create New Sabha</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+            <TextField
+              name="topic"
+              label="Topic"
+              value={formData.topic}
+              onChange={handleFormInputChange}
+              fullWidth
+              required
+            />
+            <TextField
+              name="speaker_name"
+              label="Speaker Name"
+              value={formData.speaker_name}
+              onChange={handleFormInputChange}
+              fullWidth
+              required
+            />
+            <TextField
+              name="date"
+              label="Date"
+              type="date"
+              value={formData.date}
+              onChange={handleFormInputChange}
+              fullWidth
+              required
+              InputLabelProps={{
+                shrink: true,
+              }}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleFormClose}>Cancel</Button>
+          <Button onClick={handleFormSubmit} variant="contained">Create</Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog
         open={isModalOpen}
@@ -173,6 +367,48 @@ const SabhaList = () => {
             />
           )}
         </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={attendanceDialogOpen}
+        onClose={handleAttendanceDialogClose}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6">
+              Edit Attendance - {selectedSabhaForAttendance?.topic}
+            </Typography>
+            <IconButton onClick={handleAttendanceDialogClose}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {youthsLoading ? (
+            <Typography>Loading youths...</Typography>
+          ) : (
+            <Box sx={{ mt: 2 }}>
+              <MaterialReactTable
+                columns={attendanceColumns}
+                data={youths}
+                muiTableContainerProps={{
+                  sx: { maxHeight: '400px' }
+                }}
+                muiTablePaperProps={{
+                  elevation: 0,
+                }}
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleAttendanceDialogClose}>Cancel</Button>
+          <Button onClick={handleSaveAttendance} variant="contained" color="primary">
+            Save Attendance
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );
