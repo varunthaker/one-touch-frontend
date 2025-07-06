@@ -11,8 +11,7 @@ import {
   Typography,
   IconButton,
   Stack,
-  TextField,
-  Checkbox,  
+  TextField,  
 } from '@mui/material';
 import { Close as CloseIcon, Add as AddIcon, Group as GroupIcon } from '@mui/icons-material';
 import useSabhaStore from '../../store/useSabhaStore';
@@ -27,7 +26,7 @@ const SabhaList = () => {
   const [createSabhaDialogOpen, setCreateSabhaDialogOpen] = useState(false);
   const [attendanceDialogOpen, setAttendanceDialogOpen] = useState(false);
   const [selectedSabhaForAttendance, setSelectedSabhaForAttendance] = useState<any>(null);
-  const [attendanceData, setAttendanceData] = useState<{[key: number]: boolean}>({});
+  const [rowSelection, setRowSelection] = useState<{[key: number]: boolean}>({});
   const [formData, setFormData] = useState({
     topic: '',
     speaker_name: '',
@@ -161,20 +160,9 @@ const SabhaList = () => {
 
   const handleEditAttendees = (sabha: any) => {
     setSelectedSabhaForAttendance(sabha);
-    // Initialize attendance data with all youths as absent (false)
-    const initialAttendance: {[key: number]: boolean} = {};
-    youths.forEach((youth: any) => {
-      initialAttendance[youth.id] = false;
-    });
-    setAttendanceData(initialAttendance);
+    // Initialize with no selections (all absent)
+    setRowSelection({});
     setAttendanceDialogOpen(true);
-  };
-
-  const handleAttendanceChange = (youthId: number, isPresent: boolean) => {
-    setAttendanceData(prev => ({
-      ...prev,
-      [youthId]: isPresent
-    }));
   };
 
   const handleSaveAttendance = async () => {
@@ -185,7 +173,7 @@ const SabhaList = () => {
         sabha_id: selectedSabhaForAttendance.id,
         attendance_data: youths.map((youth: any) => ({
           youth_id: youth.id,
-          is_present: attendanceData[youth.id] || false
+          is_present: rowSelection[youth.id] || false
         }))
       };
 
@@ -199,7 +187,7 @@ const SabhaList = () => {
 
       setAttendanceDialogOpen(false);
       setSelectedSabhaForAttendance(null);
-      setAttendanceData({});
+      setRowSelection({});
     } catch (error) {
       console.error('Error saving attendance:', error);
     }
@@ -208,13 +196,13 @@ const SabhaList = () => {
   const handleAttendanceDialogClose = () => {
     setAttendanceDialogOpen(false);
     setSelectedSabhaForAttendance(null);
-    setAttendanceData({});
+    setRowSelection({});
   };
 
   const attendanceColumns = useMemo<MRT_ColumnDef<any>[]>(
     () => [
       {
-        accessorKey: 'name',
+        accessorKey: 'first_name',
         header: 'Name',
         Cell: ({ row }) => (
           <Typography>
@@ -222,18 +210,8 @@ const SabhaList = () => {
           </Typography>
         ),
       },
-      {
-        accessorKey: 'isPresent',
-        header: 'Is Present',
-        Cell: ({ row }) => (
-          <Checkbox
-            checked={attendanceData[row.original.id] || false}
-            onChange={(e) => handleAttendanceChange(row.original.id, e.target.checked)}
-          />
-        ),
-      },
     ],
-    [attendanceData]
+    []
   );
 
   if (!selectedSabhaCenter) {
@@ -393,11 +371,16 @@ const SabhaList = () => {
               <MaterialReactTable
                 columns={attendanceColumns}
                 data={youths}
-                muiTableContainerProps={{
-                  sx: { maxHeight: '400px' }
-                }}
+                enableRowSelection={true}
+                onRowSelectionChange={setRowSelection}
+                state={{ rowSelection }}
+                enableGlobalFilter={true}
+                enableColumnFilters={true}
                 muiTablePaperProps={{
                   elevation: 0,
+                }}
+                muiTableContainerProps={{
+                  sx: { maxHeight: '400px' }
                 }}
               />
             </Box>
