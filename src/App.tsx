@@ -54,7 +54,6 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<SabhaSelector />} />
-          <Route path="/login" element={<Login />} />
           <Route path="/layout" element={<Layout />} />
           <Route path="/sabhacenterselector" element={<SabhaSelector />} />
           {/* <Route path="youths" element={<Youths youths={youthdata} selectedYouthId={setSelectedYouthId} />} /> */}
