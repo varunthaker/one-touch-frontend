@@ -6,7 +6,6 @@
 import "./css/App.css";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Layout from "./components/layout/Layout";
-import Login from "./components/login/Login";
 // import Home from "./components/layout/Home";
 // import { youthdata } from "./components/assets/dummydata";
 // import { youthType } from "./types";
