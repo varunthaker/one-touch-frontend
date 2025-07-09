@@ -14,7 +14,8 @@ import {
   AppBar,
   Toolbar,
   Typography,
-  Tooltip
+  Tooltip,
+  Avatar,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -25,8 +26,10 @@ import EventIcon from '@mui/icons-material/Event';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
+import LogoutIcon from '@mui/icons-material/Logout';
 import useSabhaSelectorStore from '../store/useSabhaSelectorStore';
 import useThemeStore from '../store/useThemeStore';
+import { useAuth } from '../auth/AuthProvider';
 import Dashboard from "./dashboard/Dashboard";
 import Youths from "./youths/Youths";
 import Attendance from "./attendance/Attendance";
@@ -61,15 +64,6 @@ const TabPanel = (props: TabPanelProps) => {
   );
 };
 
-const tabItems = [
-  { label: "Dashboard", icon: <DashboardIcon />, component: <Dashboard /> },
-  { label: "Youths", icon: <PeopleIcon />, component: <Youths /> },
-  { label: "Attendance", icon: <EventNoteIcon />, component: <Attendance /> },
-  { label: "Report", icon: <AssessmentIcon />, component: <Report /> },
-  { label: "All Sabha", icon: <EventIcon />, component: <SabhaList /> },
-  { label: "Sabha Centers", icon: <LocationOnIcon />, component: <SabhaCenter /> }
-];
-
 const Layout = () => {
   const [value, setValue] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -77,6 +71,27 @@ const Layout = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const selectedSabhaCenterName = useSabhaSelectorStore(state => state.selectedSabhaCenterName);
   const { isDarkMode, toggleTheme } = useThemeStore();
+  const { user, logout, roles } = useAuth();
+
+  // Define all possible tab items
+  const allTabItems = [
+    { label: "Dashboard", icon: <DashboardIcon />, component: <Dashboard />, roles: ['admin', 'superadmin'] },
+    { label: "Youths", icon: <PeopleIcon />, component: <Youths />, roles: ['admin', 'superadmin'] },
+    { label: "Attendance", icon: <EventNoteIcon />, component: <Attendance />, roles: ['admin', 'superadmin'] },
+    { label: "Report", icon: <AssessmentIcon />, component: <Report />, roles: ['superadmin'] },
+    { label: "All Sabha", icon: <EventIcon />, component: <SabhaList />, roles: ['admin', 'superadmin'] },
+    { label: "Sabha Centers", icon: <LocationOnIcon />, component: <SabhaCenter />, roles: ['admin', 'superadmin'] }
+  ];
+
+  // Filter tab items based on user role
+  const tabItems = allTabItems.filter(item => {
+    if (!user || !roles) {
+      console.log('No user or roles found');
+      return false;
+    }
+    
+    return item.roles.some(role => roles.includes(role));
+  });
 
   const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
@@ -85,6 +100,14 @@ const Layout = () => {
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   const drawer = (
@@ -126,6 +149,29 @@ const Layout = () => {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             {selectedSabhaCenterName || 'No Sabha Center is Selected'}
           </Typography>
+          
+          {/* User Info and Logout */}
+          {user && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mr: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Avatar sx={{ width: 32, height: 32 }}>
+                  {user.profile?.name?.charAt(0) || user.profile?.email?.charAt(0) || 'U'}
+                </Avatar>
+                <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' } }}>
+                  {user.profile?.name || user.profile?.email || 'User'}
+                </Typography>
+              </Box>
+              <Tooltip title="Logout">
+                <IconButton
+                  color="inherit"
+                  onClick={handleLogout}
+                  size="small"
+                >
+                  <LogoutIcon />
+                </IconButton>
+              </Tooltip>
+            </Box>
+          )}
           
           <Tooltip title={isDarkMode ? 'Light mode' : 'Dark mode'}>
             <IconButton sx={{ ml: 1 }} onClick={toggleTheme} color="inherit">
