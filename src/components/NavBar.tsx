@@ -142,29 +142,10 @@ const Layout = () => {
               <MenuIcon />
             </IconButton>
           )}
+          
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             {selectedSabhaCenterName || 'No Sabha Center is Selected'}
           </Typography>
-          
-          {user && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mr: 2 }}>
-              <Tooltip title="Logout">
-                <IconButton
-                  color="inherit"
-                  onClick={handleLogout}
-                  size="small"
-                >
-                  <LogoutIcon />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          )}
-          
-          <Tooltip title={isDarkMode ? 'Light mode' : 'Dark mode'}>
-            <IconButton sx={{ ml: 1 }} onClick={toggleTheme} color="inherit">
-              {isDarkMode ? <Brightness7Icon /> : <Brightness4Icon />}
-            </IconButton>
-          </Tooltip>
 
           {!isMobile && (
             <Tabs
@@ -190,6 +171,26 @@ const Layout = () => {
               ))}
             </Tabs>
           )}
+          
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Tooltip title={isDarkMode ? 'Light mode' : 'Dark mode'}>
+              <IconButton onClick={toggleTheme} color="inherit">
+                {isDarkMode ? <Brightness7Icon /> : <Brightness4Icon />}
+              </IconButton>
+            </Tooltip>
+            
+            {user && (
+              <Tooltip title="Logout">
+                <IconButton
+                  color="inherit"
+                  onClick={handleLogout}
+                  size="small"
+                >
+                  <LogoutIcon />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
         </Toolbar>
       </AppBar>
 
