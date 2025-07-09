@@ -62,13 +62,6 @@ const Youths = () => {
         header: 'City in India',
       },
       {
-        accessorKey: 'is_active',
-        header: 'Active Status',
-        Cell: ({ cell }) => (
-          <Typography>{cell.getValue<boolean>() ? 'Active' : 'Inactive'}</Typography>
-        ),
-      },
-      {
         id: 'edit',
         header: 'Edit',
         Cell: ({ row }) => (
