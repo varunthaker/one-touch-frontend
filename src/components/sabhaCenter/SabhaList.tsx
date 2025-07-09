@@ -364,7 +364,7 @@ const SabhaList = () => {
         <DialogTitle>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Typography variant="h6">
-              Attendees - Sabha {selectedSabha}
+              Attendees - {sabhas.find(sabha => sabha.id === selectedSabha)?.topic || 'Unknown Sabha'}
             </Typography>
             <IconButton onClick={() => setIsModalOpen(false)}>
               <CloseIcon />
