@@ -285,6 +285,14 @@ const SabhaList = () => {
         state={{ isLoading: sabhasLoading }}
         enablePagination={true}
         enableSorting={true}
+        initialState={{
+          sorting: [
+            {
+              id: 'id',
+              desc: true
+            }
+          ]
+        }}
         muiTablePaperProps={{
           elevation: 1,
           sx: {
@@ -292,6 +300,14 @@ const SabhaList = () => {
             border: '1px solid #e0e0e0',
           },
         }}
+        muiTableBodyRowProps={({ row }) => ({
+          sx: {
+            backgroundColor: row.original.id === Math.max(...sabhas.map(s => s.id)) ? '#e3f2fd' : 'inherit',
+            '&:hover': {
+              backgroundColor: row.original.id === Math.max(...sabhas.map(s => s.id)) ? '#bbdefb' : undefined,
+            },
+          },
+        })}
       />
 
       <Dialog
