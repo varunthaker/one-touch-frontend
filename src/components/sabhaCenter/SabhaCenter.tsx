@@ -118,25 +118,21 @@ const SabhaCenter = () => {
     },
     ...(roles?.includes('superadmin') ? [
       {
-        id: 'edit',
-        header: 'Edit',
+        id: 'actions',
+        header: 'Actions',
         Cell: ({ row }: { row: any }) => (
-          <Tooltip title="Edit">
-            <IconButton color="primary" onClick={() => handleEditClick(row.original)}>
-              <EditIcon />
-            </IconButton>
-          </Tooltip>
-        ),
-      },
-      {
-        id: 'delete',
-        header: 'Delete',
-        Cell: ({ row }: { row: any }) => (
-          <Tooltip title="Delete">
-            <IconButton color="error" onClick={() => handleDeleteClick(row.original.id!)}>
-              <DeleteIcon />
-            </IconButton>
-          </Tooltip>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Tooltip title="Edit">
+              <IconButton color="primary" onClick={() => handleEditClick(row.original)}>
+                <EditIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Delete">
+              <IconButton color="error" onClick={() => handleDeleteClick(row.original.id!)}>
+                <DeleteIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
         ),
       },
     ] : []),
