@@ -153,49 +153,47 @@ const Youths = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Paper sx={{ width: '100%', mb: 2, p: 2 }}>
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-          spacing={2}
-          sx={{ mb: 2 }}
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        spacing={2}
+        sx={{ mb: 2 }}
+      >
+        <Typography variant="h5">
+          Youths
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleAddClick}
         >
-          <Typography variant="h5">
-            Youths
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleAddClick}
-          >
-            Add New Youth
-          </Button>
-        </Stack>
+          Add New Youth
+        </Button>
+      </Stack>
 
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-            <CircularProgress />
-          </Box>
-        ) : error ? (
-          <Alert severity="error">{error}</Alert>
-        ) : (
-          <MaterialReactTable
-            columns={columns}
-            data={youths}
-            enableColumnResizing
-            enableColumnOrdering
-            enableSorting
-            enableGlobalFilter
-            muiTableContainerProps={{
-              sx: { maxHeight: '600px' }
-            }}
-            initialState={{
-              density: 'compact'
-            }}
-          />
-        )}
-      </Paper>
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+          <CircularProgress />
+        </Box>
+      ) : error ? (
+        <Alert severity="error">{error}</Alert>
+      ) : (
+        <MaterialReactTable
+          columns={columns}
+          data={youths}
+          enableColumnResizing
+          enableColumnOrdering
+          enableSorting
+          enableGlobalFilter
+          muiTableContainerProps={{
+            sx: { maxHeight: '600px' }
+          }}
+          initialState={{
+            density: 'compact'
+          }}
+        />
+      )}
       
       <YouthInfoForm
         visible={formDialogOpen}
