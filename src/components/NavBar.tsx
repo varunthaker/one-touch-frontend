@@ -14,13 +14,11 @@ import {
   AppBar,
   Toolbar,
   Typography,
-  Tooltip,
-  Avatar,
+  Tooltip
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
-import EventNoteIcon from '@mui/icons-material/EventNote';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import EventIcon from '@mui/icons-material/Event';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -32,7 +30,6 @@ import useThemeStore from '../store/useThemeStore';
 import { useAuth } from '../auth/AuthProvider';
 import Dashboard from "./dashboard/Dashboard";
 import Youths from "./youths/Youths";
-import Attendance from "./attendance/Attendance";
 import Report from "./reports/Report";
 import SabhaList from "./sabhaCenter/SabhaList";
 import SabhaCenter from "./sabhaCenter/SabhaCenter";
@@ -77,9 +74,8 @@ const Layout = () => {
   const allTabItems = [
     { label: "Dashboard", icon: <DashboardIcon />, component: <Dashboard />, roles: ['admin', 'superadmin'] },
     { label: "Youths", icon: <PeopleIcon />, component: <Youths />, roles: ['admin', 'superadmin'] },
-    { label: "Attendance", icon: <EventNoteIcon />, component: <Attendance />, roles: ['admin', 'superadmin'] },
     { label: "Report", icon: <AssessmentIcon />, component: <Report />, roles: ['superadmin'] },
-    { label: "All Sabha", icon: <EventIcon />, component: <SabhaList />, roles: ['admin', 'superadmin'] },
+    { label: "Sabha & Attendance", icon: <EventIcon />, component: <SabhaList />, roles: ['admin', 'superadmin'] },
     { label: "Sabha Centers", icon: <LocationOnIcon />, component: <SabhaCenter />, roles: ['admin', 'superadmin'] }
   ];
 

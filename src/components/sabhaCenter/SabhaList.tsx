@@ -247,13 +247,15 @@ const SabhaList = () => {
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h5">Sabha List</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleCreateSabha}
-        >
-          Create New Sabha
-        </Button>
+        {roles?.includes('superadmin') && (
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleCreateSabha}
+          >
+            Create New Sabha
+          </Button>
+        )}
       </Box>
 
       <MaterialReactTable
