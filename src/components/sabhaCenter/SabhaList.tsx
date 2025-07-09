@@ -17,6 +17,7 @@ import { Close as CloseIcon, Add as AddIcon, Group as GroupIcon } from '@mui/ico
 import useSabhaStore from '../../store/useSabhaStore';
 import useYouthsStore from '../../store/useYouthsStore';
 import useSabhaSelectorStore from '../../store/useSabhaSelectorStore';
+import { useAuth } from '../../auth/AuthProvider';
 import dayjs from 'dayjs';
 import { Link } from 'react-router-dom';
 
@@ -36,6 +37,7 @@ const SabhaList = () => {
   const { sabhas, loading: sabhasLoading, error: sabhasError, fetchSabhas } = useSabhaStore();
   const { youths, loading: youthsLoading, fetchYouths } = useYouthsStore();
   const selectedSabhaCenter = useSabhaSelectorStore(state => state.selectedCity);
+  const { roles } = useAuth();
 
   useEffect(() => {
     if (selectedSabhaCenter) {
@@ -79,15 +81,17 @@ const SabhaList = () => {
             >
               View Attendees
             </Button>
-            <Button
-              variant="contained"
-              color="secondary"
-              size="small"
-              startIcon={<GroupIcon />}
-              onClick={() => handleEditAttendees(row.original)}
-            >
-              Edit Attendees
-            </Button>
+            {roles?.includes('superadmin') && (
+              <Button
+                variant="contained"
+                color="secondary"
+                size="small"
+                startIcon={<GroupIcon />}
+                onClick={() => handleEditAttendees(row.original)}
+              >
+                Edit Attendees
+              </Button>
+            )}
           </Box>
         ),
       },
