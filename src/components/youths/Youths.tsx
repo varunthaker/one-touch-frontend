@@ -10,7 +10,8 @@ import {
   CircularProgress,
   IconButton,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon } from '@mui/icons-material';
+import { Add as AddIcon, Edit as EditIcon, FileDownload as FileDownloadIcon } from '@mui/icons-material';
+import { mkConfig, generateCsv, download } from 'export-to-csv';
 import useYouthsStore from "../../store/useYouthsStore";
 import useSabhaSelectorStore from "../../store/useSabhaSelectorStore";
 import { Link } from "react-router-dom";
@@ -155,13 +156,41 @@ const Youths = () => {
         <Typography variant="h5">
           Youths
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleAddClick}
-        >
-          Add New Youth
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<FileDownloadIcon />}
+            onClick={() => {
+              const csvConfig = mkConfig({
+                useKeysAsHeaders: true,
+                filename: 'youths_data'
+              });
+              
+              const csvData = youths.map(youth => ({
+                'First Name': youth.first_name || '',
+                'Last Name': youth.last_name || '',
+                'Birthdate': youth.birth_date || '',
+                'Email': youth.email || '',
+                'Phone Number': youth.phone_number || '',
+                'Education Field': youth.educational_field || '',
+                'City in Germany': youth.current_city_germany || '',
+                'City in India': youth.origin_city_india || ''
+              }));
+              
+              const csv = generateCsv(csvConfig)(csvData);
+              download(csvConfig)(csv);
+            }}
+          >
+            Export CSV
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleAddClick}
+          >
+            Add New Youth
+          </Button>
+        </Box>
       </Stack>
 
       {loading ? (
