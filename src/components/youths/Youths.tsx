@@ -6,7 +6,6 @@ import {
   Box,
   Typography,
   Stack,
-  Paper,
   Alert,
   CircularProgress,
   IconButton,
