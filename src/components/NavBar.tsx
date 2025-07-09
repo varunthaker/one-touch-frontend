@@ -150,17 +150,8 @@ const Layout = () => {
             {selectedSabhaCenterName || 'No Sabha Center is Selected'}
           </Typography>
           
-          {/* User Info and Logout */}
           {user && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mr: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Avatar sx={{ width: 32, height: 32 }}>
-                  {user.profile?.name?.charAt(0) || user.profile?.email?.charAt(0) || 'U'}
-                </Avatar>
-                <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' } }}>
-                  {user.profile?.name || user.profile?.email || 'User'}
-                </Typography>
-              </Box>
               <Tooltip title="Logout">
                 <IconButton
                   color="inherit"
