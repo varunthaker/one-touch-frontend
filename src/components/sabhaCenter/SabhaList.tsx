@@ -28,6 +28,7 @@ const SabhaList = () => {
   const [attendanceDialogOpen, setAttendanceDialogOpen] = useState(false);
   const [selectedSabhaForAttendance, setSelectedSabhaForAttendance] = useState<any>(null);
   const [rowSelection, setRowSelection] = useState<{[key: number]: boolean}>({});
+  const [confirmCloseDialogOpen, setConfirmCloseDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     topic: '',
     speaker_name: '',
@@ -198,9 +199,29 @@ const SabhaList = () => {
   };
 
   const handleAttendanceDialogClose = () => {
+    // Check if there are any selections made
+    const hasSelections = Object.keys(rowSelection).length > 0;
+    
+    if (hasSelections) {
+      // Show confirmation dialog if there are unsaved changes
+      setConfirmCloseDialogOpen(true);
+    } else {
+      // Close directly if no changes
+      setAttendanceDialogOpen(false);
+      setSelectedSabhaForAttendance(null);
+      setRowSelection({});
+    }
+  };
+
+  const handleConfirmClose = () => {
+    setConfirmCloseDialogOpen(false);
     setAttendanceDialogOpen(false);
     setSelectedSabhaForAttendance(null);
     setRowSelection({});
+  };
+
+  const handleCancelClose = () => {
+    setConfirmCloseDialogOpen(false);
   };
 
   const attendanceColumns = useMemo<MRT_ColumnDef<any>[]>(
@@ -396,6 +417,19 @@ const SabhaList = () => {
           <Button onClick={handleAttendanceDialogClose}>Cancel</Button>
           <Button onClick={handleSaveAttendance} variant="contained" color="primary">
             Save Attendance
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={confirmCloseDialogOpen} onClose={handleCancelClose} maxWidth="xs">
+        <DialogTitle>Unsaved Changes</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure? Your attendance changes are not saved.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelClose}>Cancel</Button>
+          <Button onClick={handleConfirmClose} color="error" variant="contained">
+            Close Without Saving
           </Button>
         </DialogActions>
       </Dialog>
