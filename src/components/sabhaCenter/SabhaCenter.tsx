@@ -284,24 +284,23 @@ const SabhaCenter = () => {
     <Box sx={{ p: 2 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h5">Sabha Centers</Typography>
-      </Box>
-
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Button
-          variant="contained"
-          onClick={handleClickChangeCenter}
-        >
-          Change Center
-        </Button>
-        {roles?.includes('superadmin') && (
+        <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
             variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleAddSabhaCenter}
+            onClick={handleClickChangeCenter}
           >
-            Add Sabha Center
+            Change Center
           </Button>
-        )}
+          {roles?.includes('superadmin') && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleAddSabhaCenter}
+            >
+              Add Sabha Center
+            </Button>
+          )}
+        </Box>
       </Box>
 
       <MaterialReactTable table={table} />
