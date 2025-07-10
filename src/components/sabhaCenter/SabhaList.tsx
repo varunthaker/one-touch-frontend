@@ -17,6 +17,7 @@ import { Close as CloseIcon, Add as AddIcon, Group as GroupIcon } from '@mui/ico
 import useSabhaStore from '../../store/useSabhaStore';
 import useYouthsStore from '../../store/useYouthsStore';
 import useSabhaSelectorStore from '../../store/useSabhaSelectorStore';
+import { useAuth } from '../../auth/AuthProvider';
 import dayjs from 'dayjs';
 import { Link } from 'react-router-dom';
 
@@ -27,6 +28,7 @@ const SabhaList = () => {
   const [attendanceDialogOpen, setAttendanceDialogOpen] = useState(false);
   const [selectedSabhaForAttendance, setSelectedSabhaForAttendance] = useState<any>(null);
   const [rowSelection, setRowSelection] = useState<{[key: number]: boolean}>({});
+  const [confirmCloseDialogOpen, setConfirmCloseDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     topic: '',
     speaker_name: '',
@@ -36,6 +38,7 @@ const SabhaList = () => {
   const { sabhas, loading: sabhasLoading, error: sabhasError, fetchSabhas } = useSabhaStore();
   const { youths, loading: youthsLoading, fetchYouths } = useYouthsStore();
   const selectedSabhaCenter = useSabhaSelectorStore(state => state.selectedCity);
+  const { roles } = useAuth();
 
   useEffect(() => {
     if (selectedSabhaCenter) {
@@ -79,15 +82,17 @@ const SabhaList = () => {
             >
               View Attendees
             </Button>
-            <Button
-              variant="contained"
-              color="secondary"
-              size="small"
-              startIcon={<GroupIcon />}
-              onClick={() => handleEditAttendees(row.original)}
-            >
-              Edit Attendees
-            </Button>
+            {roles?.includes('superadmin') && (
+              <Button
+                variant="contained"
+                color="secondary"
+                size="small"
+                startIcon={<GroupIcon />}
+                onClick={() => handleEditAttendees(row.original)}
+              >
+                Edit Attendees
+              </Button>
+            )}
           </Box>
         ),
       },
@@ -194,9 +199,29 @@ const SabhaList = () => {
   };
 
   const handleAttendanceDialogClose = () => {
+    // Check if there are any selections made
+    const hasSelections = Object.keys(rowSelection).length > 0;
+    
+    if (hasSelections) {
+      // Show confirmation dialog if there are unsaved changes
+      setConfirmCloseDialogOpen(true);
+    } else {
+      // Close directly if no changes
+      setAttendanceDialogOpen(false);
+      setSelectedSabhaForAttendance(null);
+      setRowSelection({});
+    }
+  };
+
+  const handleConfirmClose = () => {
+    setConfirmCloseDialogOpen(false);
     setAttendanceDialogOpen(false);
     setSelectedSabhaForAttendance(null);
     setRowSelection({});
+  };
+
+  const handleCancelClose = () => {
+    setConfirmCloseDialogOpen(false);
   };
 
   const attendanceColumns = useMemo<MRT_ColumnDef<any>[]>(
@@ -243,13 +268,15 @@ const SabhaList = () => {
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h5">Sabha List</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleCreateSabha}
-        >
-          Create New Sabha
-        </Button>
+        {roles?.includes('superadmin') && (
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleCreateSabha}
+          >
+            Create New Sabha
+          </Button>
+        )}
       </Box>
 
       <MaterialReactTable
@@ -258,6 +285,14 @@ const SabhaList = () => {
         state={{ isLoading: sabhasLoading }}
         enablePagination={true}
         enableSorting={true}
+        initialState={{
+          sorting: [
+            {
+              id: 'id',
+              desc: true
+            }
+          ]
+        }}
         muiTablePaperProps={{
           elevation: 1,
           sx: {
@@ -265,6 +300,14 @@ const SabhaList = () => {
             border: '1px solid #e0e0e0',
           },
         }}
+        muiTableBodyRowProps={({ row }) => ({
+          sx: {
+            backgroundColor: row.original.id === Math.max(...sabhas.map(s => s.id)) ? '#e3f2fd' : 'inherit',
+            '&:hover': {
+              backgroundColor: row.original.id === Math.max(...sabhas.map(s => s.id)) ? '#bbdefb' : undefined,
+            },
+          },
+        })}
       />
 
       <Dialog
@@ -321,7 +364,7 @@ const SabhaList = () => {
         <DialogTitle>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Typography variant="h6">
-              Attendees - Sabha {selectedSabha}
+              Attendees - {sabhas.find(sabha => sabha.id === selectedSabha)?.topic || 'Unknown Sabha'}
             </Typography>
             <IconButton onClick={() => setIsModalOpen(false)}>
               <CloseIcon />
@@ -390,6 +433,19 @@ const SabhaList = () => {
           <Button onClick={handleAttendanceDialogClose}>Cancel</Button>
           <Button onClick={handleSaveAttendance} variant="contained" color="primary">
             Save Attendance
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={confirmCloseDialogOpen} onClose={handleCancelClose} maxWidth="xs">
+        <DialogTitle>Unsaved Changes</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure? Your attendance changes are not saved.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelClose}>Cancel</Button>
+          <Button onClick={handleConfirmClose} color="error" variant="contained">
+            Close Without Saving
           </Button>
         </DialogActions>
       </Dialog>

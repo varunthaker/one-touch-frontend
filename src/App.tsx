@@ -6,7 +6,6 @@
 import "./css/App.css";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Layout from "./components/layout/Layout";
-import Login from "./components/login/Login";
 // import Home from "./components/layout/Home";
 // import { youthdata } from "./components/assets/dummydata";
 // import { youthType } from "./types";
@@ -16,6 +15,8 @@ import SabhaSelector from "./components/sabhaCenter/SabhaSelector";
 import { ThemeProvider, createTheme } from "@mui/material";
 import CssBaseline from "@mui/material/CssBaseline";
 import useThemeStore from "./store/useThemeStore";
+import { AuthProvider } from "./auth/AuthProvider";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 function App() {
   const isDarkMode = useThemeStore((state) => state.isDarkMode);
@@ -52,41 +53,63 @@ function App() {
     <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
       <CssBaseline />
       <Router>
-        <Routes>
-          <Route path="/" element={<SabhaSelector />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/layout" element={<Layout />} />
-          <Route path="/sabhacenterselector" element={<SabhaSelector />} />
-          {/* <Route path="youths" element={<Youths youths={youthdata} selectedYouthId={setSelectedYouthId} />} /> */}
-          {/* <Route
-              path="/layout/create"
+        <AuthProvider>
+          <Routes>
+            <Route 
+              path="/" 
               element={
-                <YouthInfoForm
-                  youth={{
-                    youthId: 0,
-                    email: "",
-                    firstName: "",
-                    lastName: "",
-                    birthdate: "",
-                    cityInGermany: "",
-                    cityInIndia: "",
-                    phoneNumber: "",
-                    gender: "",
-                    education: "",
-                    occupation: "",
-                    hobbies: "",
-                    guardianName: "",
-                    guardianContact: "",
-                  }}
-                />
-              }
-            /> */}
-          {/* <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/youths/:selectedUserId" element={<Youth youth={selectedYouth} />} />
-            <Route path="/youths/:selectedUserId/update" element={<YouthInfoForm youth={selectedYouth} />} />
-            <Route path="/attendance" element={<Attendance youths={youthdata} />} />
-            <Route path="/report" element={<Report />} /> */}
-        </Routes>
+                <ProtectedRoute>
+                  <SabhaSelector />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/layout" 
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/sabhacenterselector" 
+              element={
+                <ProtectedRoute>
+                  <SabhaSelector />
+                </ProtectedRoute>
+              } 
+            />
+            {/* <Route path="youths" element={<Youths youths={youthdata} selectedYouthId={setSelectedYouthId} />} /> */}
+            {/* <Route
+                path="/layout/create"
+                element={
+                  <YouthInfoForm
+                    youth={{
+                      youthId: 0,
+                      email: "",
+                      firstName: "",
+                      lastName: "",
+                      birthdate: "",
+                      cityInGermany: "",
+                      cityInIndia: "",
+                      phoneNumber: "",
+                      gender: "",
+                      education: "",
+                      occupation: "",
+                      hobbies: "",
+                      guardianName: "",
+                      guardianContact: "",
+                    }}
+                  />
+                }
+              /> */}
+            {/* <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/youths/:selectedUserId" element={<Youth youth={selectedYouth} />} />
+              <Route path="/youths/:selectedUserId/update" element={<YouthInfoForm youth={selectedYouth} />} />
+              <Route path="/attendance" element={<Attendance youths={youthdata} />} />
+              <Route path="/report" element={<Report />} /> */}
+          </Routes>
+        </AuthProvider>
       </Router>
     </ThemeProvider>
   );

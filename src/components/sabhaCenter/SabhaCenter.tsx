@@ -22,6 +22,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../auth/AuthProvider';
 interface SabhaCenter {
   city: string;
   address: string;
@@ -65,6 +66,7 @@ const SabhaCenter = () => {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const navigate = useNavigate();
+  const { roles } = useAuth();
   const fetchYouths = async (centerId: number, centerName: string) => {
     setLoadingYouths(true);
     try {
@@ -114,28 +116,26 @@ const SabhaCenter = () => {
         </Tooltip>
       ),
     },
-    {
-      id: 'edit',
-      header: 'Edit',
-      Cell: ({ row }) => (
-        <Tooltip title="Edit">
-          <IconButton color="primary" onClick={() => handleEditClick(row.original)}>
-            <EditIcon />
-          </IconButton>
-        </Tooltip>
-      ),
-    },
-    {
-      id: 'delete',
-      header: 'Delete',
-      Cell: ({ row }) => (
-        <Tooltip title="Delete">
-          <IconButton color="error" onClick={() => handleDeleteClick(row.original.id!)}>
-            <DeleteIcon />
-          </IconButton>
-        </Tooltip>
-      ),
-    },
+    ...(roles?.includes('superadmin') ? [
+      {
+        id: 'actions',
+        header: 'Actions',
+        Cell: ({ row }: { row: any }) => (
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Tooltip title="Edit">
+              <IconButton color="primary" onClick={() => handleEditClick(row.original)}>
+                <EditIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Delete">
+              <IconButton color="error" onClick={() => handleDeleteClick(row.original.id!)}>
+                <DeleteIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        ),
+      },
+    ] : []),
   ];
 
   const youthColumns: MRT_ColumnDef<Youth>[] = [
@@ -280,22 +280,23 @@ const SabhaCenter = () => {
     <Box sx={{ p: 2 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h5">Sabha Centers</Typography>
-      </Box>
-
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Button
-          variant="contained"
-          onClick={handleClickChangeCenter}
-        >
-          Change Center
-        </Button>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleAddSabhaCenter}
-        >
-          Add Sabha Center
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="contained"
+            onClick={handleClickChangeCenter}
+          >
+            Change Center
+          </Button>
+          {roles?.includes('superadmin') && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleAddSabhaCenter}
+            >
+              Add Sabha Center
+            </Button>
+          )}
+        </Box>
       </Box>
 
       <MaterialReactTable table={table} />

@@ -6,12 +6,12 @@ import {
   Box,
   Typography,
   Stack,
-  Paper,
   Alert,
   CircularProgress,
   IconButton,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon } from '@mui/icons-material';
+import { Add as AddIcon, Edit as EditIcon, FileDownload as FileDownloadIcon } from '@mui/icons-material';
+import { mkConfig, generateCsv, download } from 'export-to-csv';
 import useYouthsStore from "../../store/useYouthsStore";
 import useSabhaSelectorStore from "../../store/useSabhaSelectorStore";
 import { Link } from "react-router-dom";
@@ -61,13 +61,6 @@ const Youths = () => {
       {
         accessorKey: 'origin_city_india',
         header: 'City in India',
-      },
-      {
-        accessorKey: 'is_active',
-        header: 'Active Status',
-        Cell: ({ cell }) => (
-          <Typography>{cell.getValue<boolean>() ? 'Active' : 'Inactive'}</Typography>
-        ),
       },
       {
         id: 'edit',
@@ -153,17 +146,43 @@ const Youths = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Paper sx={{ width: '100%', mb: 2, p: 2 }}>
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-          spacing={2}
-          sx={{ mb: 2 }}
-        >
-          <Typography variant="h5">
-            Youths
-          </Typography>
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        spacing={2}
+        sx={{ mb: 2 }}
+      >
+        <Typography variant="h5">
+          Youths
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<FileDownloadIcon />}
+            onClick={() => {
+              const csvConfig = mkConfig({
+                useKeysAsHeaders: true,
+                filename: 'youths_data'
+              });
+              
+              const csvData = youths.map(youth => ({
+                'First Name': youth.first_name || '',
+                'Last Name': youth.last_name || '',
+                'Birthdate': youth.birth_date || '',
+                'Email': youth.email || '',
+                'Phone Number': youth.phone_number || '',
+                'Education Field': youth.educational_field || '',
+                'City in Germany': youth.current_city_germany || '',
+                'City in India': youth.origin_city_india || ''
+              }));
+              
+              const csv = generateCsv(csvConfig)(csvData);
+              download(csvConfig)(csv);
+            }}
+          >
+            Export CSV
+          </Button>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
@@ -171,31 +190,31 @@ const Youths = () => {
           >
             Add New Youth
           </Button>
-        </Stack>
+        </Box>
+      </Stack>
 
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-            <CircularProgress />
-          </Box>
-        ) : error ? (
-          <Alert severity="error">{error}</Alert>
-        ) : (
-          <MaterialReactTable
-            columns={columns}
-            data={youths}
-            enableColumnResizing
-            enableColumnOrdering
-            enableSorting
-            enableGlobalFilter
-            muiTableContainerProps={{
-              sx: { maxHeight: '600px' }
-            }}
-            initialState={{
-              density: 'compact'
-            }}
-          />
-        )}
-      </Paper>
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+          <CircularProgress />
+        </Box>
+      ) : error ? (
+        <Alert severity="error">{error}</Alert>
+      ) : (
+        <MaterialReactTable
+          columns={columns}
+          data={youths}
+          enableColumnResizing
+          enableColumnOrdering
+          enableSorting
+          enableGlobalFilter
+          muiTableContainerProps={{
+            sx: { maxHeight: '600px' }
+          }}
+          initialState={{
+            density: 'compact'
+          }}
+        />
+      )}
       
       <YouthInfoForm
         visible={formDialogOpen}
