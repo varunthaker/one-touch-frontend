@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import useSabhaSelectorStore from '../../store/useSabhaSelectorStore';
 import useSabhaCenterStore from '../../store/useSabhaCenterStore';
 import { useNavigate } from 'react-router-dom';
-import { Box, Typography, FormControlLabel, Checkbox, Button, Container, Paper } from '@mui/material';
+import { Box, Typography, Button, Container, Paper, Card, CardContent } from '@mui/material';
 
 const SabhaSelector: React.FC = () => {
   const navigate = useNavigate();
@@ -54,33 +54,32 @@ const SabhaSelector: React.FC = () => {
           ) : error ? (
             <Typography color="error">{error}</Typography>
           ) : (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 2 }}>
               {sabhaCenters.map((center) => (
-                <FormControlLabel
+                <Card
                   key={center.id}
-                  control={
-                    <Checkbox
-                      checked={selectedCity === center.id}
-                      onChange={() => handleChange(center.id, center.name)}
-                    />
-                  }
-                  label={
-                    <Box>
-                      <Typography variant="subtitle1">{center.name}</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {center.address}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Contact: {center.responsible_person} ({center.contact_number})
-                      </Typography>
-                    </Box>
-                  }
-                  sx={{ 
-                    alignItems: 'flex-start',
-                    marginLeft: 0,
-                    width: '100%'
+                  onClick={() => handleChange(center.id, center.name)}
+                  sx={{
+                    cursor: 'pointer',
+                    border: selectedCity === center.id ? '2px solid #1976d2' : '2px solid transparent',
+                    backgroundColor: selectedCity === center.id ? 'rgba(25, 118, 210, 0.08)' : 'background.paper',
+                    transition: 'all 0.2s ease-in-out',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: 3,
+                    }
                   }}
-                />
+                >
+                  <CardContent>
+                    <Typography variant="h6" sx={{ mb: 1 }}>{center.name}</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      {center.address}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Contact: {center.responsible_person} ({center.contact_number})
+                    </Typography>
+                  </CardContent>
+                </Card>
               ))}
             </Box>
           )}
