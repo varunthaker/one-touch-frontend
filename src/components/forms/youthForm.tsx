@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { 
   Dialog, 
   DialogTitle, 
@@ -23,6 +23,7 @@ import { useForm, Controller } from "react-hook-form";
 import axios from "axios";
 import useSabhaCenterStore from "../../store/useSabhaCenterStore";
 import useYouthsStore from "../../store/useYouthsStore";
+import useSabhaSelectorStore from "../../store/useSabhaSelectorStore";
 import dayjs from 'dayjs';
 
 interface YouthFormData {
@@ -40,6 +41,30 @@ interface YouthFormData {
   sabha_center_ids: number[];
 }
 
+interface Karyakarta {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone_number: string;
+  birth_date: string;
+  origin_city_india: string;
+  current_city_germany: string;
+  is_active: boolean;
+  educational_field: string;
+  created_at: string;
+  is_karyakarta: boolean;
+  karyakarta_id: number;
+  id: number;
+  sabha_centers: Array<{
+    city: string;
+    address: string;
+    responsible_person: string;
+    contact_number: string;
+    name: string;
+    id: number;
+  }>;
+}
+
 interface YouthInfoFormProps {
   visible: boolean;
   onClose: () => void;
@@ -52,6 +77,9 @@ interface YouthInfoFormProps {
 export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialogTitle = 'Add New Youth', submitButtonText = 'Save' }: YouthInfoFormProps) {
   const { sabhaCenters, fetchSabhaCenters } = useSabhaCenterStore();
   const { fetchYouths } = useYouthsStore();
+  const selectedSabhaCenter = useSabhaSelectorStore(state => state.selectedCity);
+  const [karyakartas, setKaryakartas] = useState<Karyakarta[]>([]);
+  const [loadingKaryakartas, setLoadingKaryakartas] = useState(false);
   const { handleSubmit, control, reset } = useForm<YouthFormData>({
     defaultValues: initialValues || {
       first_name: "",
@@ -63,15 +91,30 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
       current_city_germany: "",
       is_active: true,
       is_karyakarta: false,
-      karyakarta_id: 1,
+      karyakarta_id: 0,
       educational_field: "",
       sabha_center_ids: [],
     },
   });
 
+  const fetchKaryakartas = async () => {
+    if (!selectedSabhaCenter) return;
+    
+    setLoadingKaryakartas(true);
+    try {
+      const response = await axios.get(`https://onetouch-backend-mi70.onrender.com/api/youths/get-all-karyakarta?sabha_center_id=${selectedSabhaCenter}`);
+      setKaryakartas(response.data);
+    } catch (error) {
+      console.error('Error fetching karyakartas:', error);
+    } finally {
+      setLoadingKaryakartas(false);
+    }
+  };
+
   useEffect(() => {
     if (visible) {
       fetchSabhaCenters();
+      fetchKaryakartas();
       if (initialValues) {
         reset({ ...initialValues });
       } else {
@@ -85,20 +128,19 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
           current_city_germany: "",
           is_active: true,
           is_karyakarta: false,
-          karyakarta_id: 1,
+          karyakarta_id: 0,
           educational_field: "",
           sabha_center_ids: [],
         });
       }
     }
-  }, [visible, fetchSabhaCenters, initialValues, reset]);
+  }, [visible, fetchSabhaCenters, selectedSabhaCenter, initialValues, reset]);
 
   const defaultOnSubmit = async (data: YouthFormData) => {
     try {
       await axios.post('https://onetouch-backend-mi70.onrender.com/api/youths/', {
         ...data,
         created_at: dayjs().toISOString(),
-        karyakarta_id: 1, // Ensure karyakarta_id is always 1
       });
       await fetchYouths(); // Refresh the youths data
       reset(); // Reset form
@@ -251,6 +293,33 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
                   helperText={fieldState.error?.message}
                   fullWidth
                 />
+              )}
+            />
+
+            <Controller
+              name="karyakarta_id"
+              control={control}
+              rules={{ required: "Please select a karyakarta" }}
+              render={({ field, fieldState }) => (
+                <FormControl fullWidth error={!!fieldState.error}>
+                  <InputLabel>Karyakarta</InputLabel>
+                  <Select
+                    {...field}
+                    disabled={loadingKaryakartas}
+                    input={<OutlinedInput label="Karyakarta" />}
+                  >
+                    {karyakartas.map((karyakarta) => (
+                      <MenuItem key={karyakarta.id} value={karyakarta.id}>
+                        {karyakarta.first_name} {karyakarta.last_name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {fieldState.error && (
+                    <Box sx={{ color: 'error.main', fontSize: '0.75rem', mt: 0.5 }}>
+                      {fieldState.error.message}
+                    </Box>
+                  )}
+                </FormControl>
               )}
             />
 
