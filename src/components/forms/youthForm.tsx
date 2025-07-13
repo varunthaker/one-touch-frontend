@@ -80,7 +80,7 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
   const selectedSabhaCenter = useSabhaSelectorStore(state => state.selectedCity);
   const [karyakartas, setKaryakartas] = useState<Karyakarta[]>([]);
   const [loadingKaryakartas, setLoadingKaryakartas] = useState(false);
-  const { handleSubmit, control, reset } = useForm<YouthFormData>({
+  const { handleSubmit, control, reset, formState: { isValid, errors } } = useForm<YouthFormData>({
     defaultValues: initialValues || {
       first_name: "",
       last_name: "",
@@ -95,6 +95,7 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
       educational_field: "",
       sabha_center_ids: [],
     },
+    mode: "onChange",
   });
 
   const fetchKaryakartas = async () => {
@@ -299,7 +300,10 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
             <Controller
               name="karyakarta_id"
               control={control}
-              rules={{ required: "Please select a karyakarta" }}
+              rules={{ 
+                required: "Please select a karyakarta",
+                validate: (value) => value > 0 || "Please select a karyakarta"
+              }}
               render={({ field, fieldState }) => (
                 <FormControl fullWidth error={!!fieldState.error}>
                   <InputLabel>Karyakarta</InputLabel>
@@ -326,7 +330,10 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
             <Controller
               name="sabha_center_ids"
               control={control}
-              rules={{ required: "Please select at least one sabha center" }}
+              rules={{ 
+                required: "Please select at least one sabha center",
+                validate: (value) => (value && value.length > 0) || "Please select at least one sabha center"
+              }}
               render={({ field, fieldState }) => (
                 <FormControl fullWidth error={!!fieldState.error}>
                   <InputLabel>Sabha Centers</InputLabel>
@@ -351,6 +358,11 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
                       </MenuItem>
                     ))}
                   </Select>
+                  {fieldState.error && (
+                    <Box sx={{ color: 'error.main', fontSize: '0.75rem', mt: 0.5 }}>
+                      {fieldState.error.message}
+                    </Box>
+                  )}
                 </FormControl>
               )}
             />
@@ -392,7 +404,12 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
         </DialogContent>
         <DialogActions>
           <Button onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="contained" color="primary">
+          <Button 
+            type="submit" 
+            variant="contained" 
+            color="primary"
+            disabled={!isValid || Object.keys(errors).length > 0}
+          >
             {submitButtonText}
           </Button>
         </DialogActions>
