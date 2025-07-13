@@ -399,9 +399,9 @@ const SabhaList = () => {
         }}
         muiTableBodyRowProps={({ row }) => ({
           sx: {
-            backgroundColor: row.original.id === Math.max(...sabhas.map(s => s.id)) ? '#e3f2fd' : 'inherit',
+            backgroundColor: row.original.id === Math.max(...sabhas.map(s => s.id)) ? 'rgba(82, 154, 209, 0.16)' : 'inherit',
             '&:hover': {
-              backgroundColor: row.original.id === Math.max(...sabhas.map(s => s.id)) ? '#bbdefb' : undefined,
+              backgroundColor: row.original.id === Math.max(...sabhas.map(s => s.id)) ? 'rgba(166, 176, 184, 0.24)' : undefined,
             },
           },
         })}
