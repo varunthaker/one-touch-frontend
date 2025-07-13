@@ -13,7 +13,11 @@ import {
   Stack,
   TextField,  
 } from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { Close as CloseIcon, Add as AddIcon, Group as GroupIcon } from '@mui/icons-material';
+import { useForm, Controller } from 'react-hook-form';
 import useSabhaStore from '../../store/useSabhaStore';
 import useYouthsStore from '../../store/useYouthsStore';
 import useSabhaSelectorStore from '../../store/useSabhaSelectorStore';
@@ -29,10 +33,19 @@ const SabhaList = () => {
   const [selectedSabhaForAttendance, setSelectedSabhaForAttendance] = useState<any>(null);
   const [rowSelection, setRowSelection] = useState<{[key: number]: boolean}>({});
   const [confirmCloseDialogOpen, setConfirmCloseDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    topic: '',
-    speaker_name: '',
-    date: dayjs().format('YYYY-MM-DD')
+  interface SabhaFormData {
+    topic: string;
+    speaker_name: string;
+    date: string;
+  }
+
+  const { handleSubmit, control, reset, formState: { isValid, errors } } = useForm<SabhaFormData>({
+    defaultValues: {
+      topic: '',
+      speaker_name: '',
+      date: dayjs().format('YYYY-MM-DD')
+    },
+    mode: 'onChange'
   });
 
   const { sabhas, loading: sabhasLoading, error: sabhasError, fetchSabhas } = useSabhaStore();
@@ -122,15 +135,7 @@ const SabhaList = () => {
     setCreateSabhaDialogOpen(true);
   };
 
-  const handleFormInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleFormSubmit = async () => {
+  const onSubmit = async (data: SabhaFormData) => {
     try {
       await fetch('https://onetouch-backend-mi70.onrender.com/api/sabhas/', {
         method: 'POST',
@@ -138,29 +143,23 @@ const SabhaList = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...formData,
+          ...data,
           sabha_center_id: selectedSabhaCenter
         })
       });
       setCreateSabhaDialogOpen(false);
-      setFormData({
-        topic: '',
-        speaker_name: '',
-        date: dayjs().format('YYYY-MM-DD')
-      });
+      reset();
       fetchSabhas(); // Refresh the table
     } catch (error) {
       console.error('Error creating sabha:', error);
     }
   };
 
-  const handleFormClose = () => {
+
+
+    const handleFormClose = () => {
     setCreateSabhaDialogOpen(false);
-    setFormData({
-      topic: '',
-      speaker_name: '',
-      date: dayjs().format('YYYY-MM-DD')
-    });
+    reset();
   };
 
   const handleEditAttendees = async (sabha: any) => {
@@ -335,42 +334,76 @@ const SabhaList = () => {
         fullWidth
       >
         <DialogTitle>Create New Sabha</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-            <TextField
-              name="topic"
-              label="Topic"
-              value={formData.topic}
-              onChange={handleFormInputChange}
-              fullWidth
-              required
-            />
-            <TextField
-              name="speaker_name"
-              label="Speaker Name"
-              value={formData.speaker_name}
-              onChange={handleFormInputChange}
-              fullWidth
-              required
-            />
-            <TextField
-              name="date"
-              label="Date"
-              type="date"
-              value={formData.date}
-              onChange={handleFormInputChange}
-              fullWidth
-              required
-              InputLabelProps={{
-                shrink: true,
-              }}
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleFormClose}>Cancel</Button>
-          <Button onClick={handleFormSubmit} variant="contained">Create</Button>
-        </DialogActions>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <DialogContent>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+              <Controller
+                name="topic"
+                control={control}
+                rules={{ required: "Topic is required" }}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    label="Topic"
+                    fullWidth
+                    required
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                  />
+                )}
+              />
+              <Controller
+                name="speaker_name"
+                control={control}
+                rules={{ required: "Speaker name is required" }}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    label="Speaker Name"
+                    fullWidth
+                    required
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                  />
+                )}
+              />
+              <Controller
+                name="date"
+                control={control}
+                rules={{ required: "Date is required" }}
+                render={({ field, fieldState }) => (
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      label="Date"
+                      value={field.value ? dayjs(field.value) : null}
+                      onChange={(newValue) => {
+                        field.onChange(newValue ? newValue.format('YYYY-MM-DD') : '');
+                      }}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          required: true,
+                          error: !!fieldState.error,
+                          helperText: fieldState.error?.message
+                        }
+                      }}
+                    />
+                  </LocalizationProvider>
+                )}
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleFormClose}>Cancel</Button>
+            <Button 
+              type="submit"
+              variant="contained"
+              disabled={!isValid}
+            >
+              Create
+            </Button>
+          </DialogActions>
+        </form>
       </Dialog>
 
       <Dialog
