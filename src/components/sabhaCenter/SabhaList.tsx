@@ -16,7 +16,7 @@ import {
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { Close as CloseIcon, Add as AddIcon, Group as GroupIcon } from '@mui/icons-material';
+import { Close as CloseIcon, Add as AddIcon, Group as GroupIcon, PersonAdd as PersonAddIcon } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import useSabhaStore from '../../store/useSabhaStore';
 import useYouthsStore from '../../store/useYouthsStore';
@@ -25,6 +25,7 @@ import { useAuth } from '../../auth/AuthProvider';
 import { API_ENDPOINTS } from '../../config/api';
 import dayjs from 'dayjs';
 import { Link } from 'react-router-dom';
+import { YouthInfoForm } from '../forms/youthForm';
 
 const SabhaList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -36,6 +37,7 @@ const SabhaList = () => {
   const [confirmCloseDialogOpen, setConfirmCloseDialogOpen] = useState(false);
   const [presentYouths, setPresentYouths] = useState<any[]>([]);
   const [loadingPresentYouths, setLoadingPresentYouths] = useState(false);
+  const [youthFormOpen, setYouthFormOpen] = useState(false);
   interface SabhaFormData {
     topic: string;
     speaker_name: string;
@@ -268,6 +270,56 @@ const SabhaList = () => {
     setConfirmCloseDialogOpen(false);
   };
 
+  const handleCreateYouth = () => {
+    setYouthFormOpen(true);
+  };
+
+  const handleYouthFormClose = () => {
+    setYouthFormOpen(false);
+  };
+
+  const handleYouthCreated = async (data: any) => {
+    try {
+      // Send the youth data to the backend
+      await fetch(API_ENDPOINTS.YOUTHS, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...data,
+          created_at: dayjs().toISOString(),
+        })
+      });
+      
+      // Refresh the youths list after a new youth is created
+      await fetchYouths();
+      setYouthFormOpen(false);
+      
+      // If we're in the attendance dialog, refresh the attendance data as well
+      if (selectedSabhaForAttendance) {
+        try {
+          // Fetch updated attendance data for the current sabha
+          const response = await fetch(API_ENDPOINTS.ATTENDANCE_BY_SABHA(selectedSabhaForAttendance.id));
+          const attendanceData = await response.json();
+          
+          // Update row selection with the new data
+          const updatedRowSelection: {[key: number]: boolean} = {};
+          if (attendanceData.present_youth_ids && Array.isArray(attendanceData.present_youth_ids)) {
+            attendanceData.present_youth_ids.forEach((youthId: number) => {
+              updatedRowSelection[youthId] = true;
+            });
+          }
+          setRowSelection(updatedRowSelection);
+        } catch (error) {
+          console.error('Error refreshing attendance data:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Error creating youth:', error);
+    }
+  };
+
   const attendanceColumns = useMemo<MRT_ColumnDef<any>[]>(
     () => [
       {
@@ -487,6 +539,16 @@ const SabhaList = () => {
           </Box>
         </DialogTitle>
         <DialogContent>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+            <Button
+              variant="outlined"
+              startIcon={<PersonAddIcon />}
+              onClick={handleCreateYouth}
+              color="primary"
+            >
+              Create New Youth
+            </Button>
+          </Box>
           {youthsLoading ? (
             <Typography>Loading youths...</Typography>
           ) : (
@@ -530,6 +592,14 @@ const SabhaList = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <YouthInfoForm
+        visible={youthFormOpen}
+        onClose={handleYouthFormClose}
+        dialogTitle="Create New Youth"
+        submitButtonText="Create Youth"
+        onSubmit={handleYouthCreated}
+      />
     </Box>
   );
 };
