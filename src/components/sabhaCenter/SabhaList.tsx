@@ -70,6 +70,7 @@ const SabhaList = () => {
       {
         accessorKey: 'id',
         header: 'Sabha ID',
+        size: 20
       },
       {
         accessorKey: 'topic',
@@ -85,8 +86,8 @@ const SabhaList = () => {
         Cell: ({ cell }) => dayjs(cell.getValue<string>()).format('DD-MM-YYYY'),
       },
       {
-        id: 'actions',
-        header: 'Actions',
+        id: 'attendees',
+        header: 'Attendees',
         Cell: ({ row }) => (
           <Box sx={{ display: 'flex', gap: '1rem' }}>
             <Button
@@ -95,7 +96,7 @@ const SabhaList = () => {
               size="small"
               onClick={() => handleViewAttendees(row.original)}
             >
-              View Attendees
+              View
             </Button>
             {roles?.includes('superadmin') && (
               <Button
@@ -105,7 +106,7 @@ const SabhaList = () => {
                 startIcon={<GroupIcon />}
                 onClick={() => handleEditAttendees(row.original)}
               >
-                Edit Attendees
+                Edit
               </Button>
             )}
           </Box>
@@ -494,7 +495,7 @@ const SabhaList = () => {
         <DialogTitle>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Typography variant="h6">
-              Attendees - {sabhas.find(sabha => sabha.id === selectedSabha)?.topic || 'Unknown Sabha'}
+              ({presentYouths.length}) Attendees - {sabhas.find(sabha => sabha.id === selectedSabha)?.topic || 'Unknown Sabha'}
             </Typography>
             <IconButton onClick={() => setIsModalOpen(false)}>
               <CloseIcon />
