@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import axios from 'axios';
 import useSabhaSelectorStore from './useSabhaSelectorStore';
+import { API_ENDPOINTS } from '../config/api';
 
 interface SabhaCenter {
   city: string;
@@ -48,7 +49,7 @@ const useYouthsStore = create<YouthsState>((set) => ({
 
     try {
       set({ loading: true, error: null });
-      const response = await axios.get(`https://onetouch-backend-mi70.onrender.com/api/youths/?sabha_center_id=${selectedCity}`);
+      const response = await axios.get(API_ENDPOINTS.YOUTHS_BY_SABHA_CENTER(selectedCity));
       set({ youths: response.data, loading: false });
     } catch (error) {
       set({ 

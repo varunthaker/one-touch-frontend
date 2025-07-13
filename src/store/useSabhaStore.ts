@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import axios from 'axios';
 import useSabhaSelectorStore from './useSabhaSelectorStore';
+import { API_ENDPOINTS } from '../config/api';
 
 interface Sabha {
   topic: string;
@@ -31,7 +32,7 @@ const useSabhaStore = create<SabhaState>((set) => ({
 
     try {
       set({ loading: true, error: null });
-      const response = await axios.get(`https://onetouch-backend-mi70.onrender.com/api/sabhas/?sabha_center_id=${selectedSabhaCenter}`);
+      const response = await axios.get(`${API_ENDPOINTS.SABHAS}?sabha_center_id=${selectedSabhaCenter}`);
       set({ sabhas: response.data, loading: false });
     } catch (error) {
       set({ 

@@ -14,6 +14,7 @@ import { Add as AddIcon, Edit as EditIcon, FileDownload as FileDownloadIcon } fr
 import { mkConfig, generateCsv, download } from 'export-to-csv';
 import useYouthsStore from "../../store/useYouthsStore";
 import useSabhaSelectorStore from "../../store/useSabhaSelectorStore";
+import { API_ENDPOINTS } from "../../config/api";
 import { Link } from "react-router-dom";
 
 const Youths = () => {
@@ -106,7 +107,7 @@ const Youths = () => {
       return;
     } else if (formMode === 'edit' && editId) {
       try {
-        await fetch(`https://onetouch-backend-mi70.onrender.com/api/youths/${editId}`, {
+        await fetch(`${API_ENDPOINTS.YOUTHS}${editId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

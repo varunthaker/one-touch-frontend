@@ -22,6 +22,7 @@ import useSabhaStore from '../../store/useSabhaStore';
 import useYouthsStore from '../../store/useYouthsStore';
 import useSabhaSelectorStore from '../../store/useSabhaSelectorStore';
 import { useAuth } from '../../auth/AuthProvider';
+import { API_ENDPOINTS } from '../../config/api';
 import dayjs from 'dayjs';
 import { Link } from 'react-router-dom';
 
@@ -41,7 +42,7 @@ const SabhaList = () => {
     date: string;
   }
 
-  const { handleSubmit, control, reset, formState: { isValid, errors } } = useForm<SabhaFormData>({
+  const { handleSubmit, control, reset, formState: { isValid } } = useForm<SabhaFormData>({
     defaultValues: {
       topic: '',
       speaker_name: '',
@@ -141,7 +142,7 @@ const SabhaList = () => {
     
     try {
       // Fetch present youth IDs for this sabha
-      const response = await fetch(`https://onetouch-backend-mi70.onrender.com/api/attendance/${sabha.id}`);
+      const response = await fetch(API_ENDPOINTS.ATTENDANCE_BY_SABHA(sabha.id));
       const data = await response.json();
       
       // Filter youths to only show present ones
@@ -163,7 +164,7 @@ const SabhaList = () => {
 
   const onSubmit = async (data: SabhaFormData) => {
     try {
-      await fetch('https://onetouch-backend-mi70.onrender.com/api/sabhas/', {
+      await fetch(API_ENDPOINTS.SABHAS, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -194,7 +195,7 @@ const SabhaList = () => {
     
     try {
       // Fetch present youth IDs for this sabha
-      const response = await fetch(`https://onetouch-backend-mi70.onrender.com/api/attendance/${sabha.id}`);
+      const response = await fetch(API_ENDPOINTS.ATTENDANCE_BY_SABHA(sabha.id));
       const data = await response.json();
       
       // Convert present_youth_ids array to rowSelection object
@@ -225,7 +226,7 @@ const SabhaList = () => {
         }))
       };
 
-      await fetch('https://onetouch-backend-mi70.onrender.com/api/attendance/', {
+      await fetch(API_ENDPOINTS.ATTENDANCE, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

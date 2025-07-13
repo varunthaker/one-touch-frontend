@@ -24,6 +24,7 @@ import axios from "axios";
 import useSabhaCenterStore from "../../store/useSabhaCenterStore";
 import useYouthsStore from "../../store/useYouthsStore";
 import useSabhaSelectorStore from "../../store/useSabhaSelectorStore";
+import { API_ENDPOINTS } from "../../config/api";
 import dayjs from 'dayjs';
 
 interface YouthFormData {
@@ -103,7 +104,7 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
     
     setLoadingKaryakartas(true);
     try {
-      const response = await axios.get(`https://onetouch-backend-mi70.onrender.com/api/youths/get-all-karyakarta?sabha_center_id=${selectedSabhaCenter}`);
+      const response = await axios.get(API_ENDPOINTS.YOUTHS_KARYAKARTA(selectedSabhaCenter));
       setKaryakartas(response.data);
     } catch (error) {
       console.error('Error fetching karyakartas:', error);
@@ -139,7 +140,7 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
 
   const defaultOnSubmit = async (data: YouthFormData) => {
     try {
-      await axios.post('https://onetouch-backend-mi70.onrender.com/api/youths/', {
+      await axios.post(API_ENDPOINTS.YOUTHS, {
         ...data,
         created_at: dayjs().toISOString(),
       });
