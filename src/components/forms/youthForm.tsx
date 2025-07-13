@@ -34,6 +34,7 @@ interface YouthFormData {
   origin_city_india: string;
   current_city_germany: string;
   is_active: boolean;
+  is_karyakarta: boolean;
   karyakarta_id: number;
   educational_field: string;
   sabha_center_ids: number[];
@@ -61,6 +62,7 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
       origin_city_india: "",
       current_city_germany: "",
       is_active: true,
+      is_karyakarta: false,
       karyakarta_id: 1,
       educational_field: "",
       sabha_center_ids: [],
@@ -82,6 +84,7 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
           origin_city_india: "",
           current_city_germany: "",
           is_active: true,
+          is_karyakarta: false,
           karyakarta_id: 1,
           educational_field: "",
           sabha_center_ids: [],
@@ -283,21 +286,39 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
               )}
             />
 
-            <Controller
-              name="is_active"
-              control={control}
-              render={({ field }) => (
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={field.value}
-                      onChange={(e) => field.onChange(e.target.checked)}
-                    />
-                  }
-                  label="Active Status"
-                />
-              )}
-            />
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+              <Controller
+                name="is_active"
+                control={control}
+                render={({ field }) => (
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                      />
+                    }
+                    label="Active Status"
+                  />
+                )}
+              />
+
+              <Controller
+                name="is_karyakarta"
+                control={control}
+                render={({ field }) => (
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                      />
+                    }
+                    label="Is Karyakarta"
+                  />
+                )}
+              />
+            </Box>
           </Box>
         </DialogContent>
         <DialogActions>
