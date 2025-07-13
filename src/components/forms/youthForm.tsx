@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { 
   Dialog, 
   DialogTitle, 
@@ -23,6 +23,8 @@ import { useForm, Controller } from "react-hook-form";
 import axios from "axios";
 import useSabhaCenterStore from "../../store/useSabhaCenterStore";
 import useYouthsStore from "../../store/useYouthsStore";
+import useSabhaSelectorStore from "../../store/useSabhaSelectorStore";
+import { API_ENDPOINTS } from "../../config/api";
 import dayjs from 'dayjs';
 
 interface YouthFormData {
@@ -34,9 +36,34 @@ interface YouthFormData {
   origin_city_india: string;
   current_city_germany: string;
   is_active: boolean;
+  is_karyakarta: boolean;
   karyakarta_id: number;
   educational_field: string;
   sabha_center_ids: number[];
+}
+
+interface Karyakarta {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone_number: string;
+  birth_date: string;
+  origin_city_india: string;
+  current_city_germany: string;
+  is_active: boolean;
+  educational_field: string;
+  created_at: string;
+  is_karyakarta: boolean;
+  karyakarta_id: number;
+  id: number;
+  sabha_centers: Array<{
+    city: string;
+    address: string;
+    responsible_person: string;
+    contact_number: string;
+    name: string;
+    id: number;
+  }>;
 }
 
 interface YouthInfoFormProps {
@@ -51,7 +78,10 @@ interface YouthInfoFormProps {
 export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialogTitle = 'Add New Youth', submitButtonText = 'Save' }: YouthInfoFormProps) {
   const { sabhaCenters, fetchSabhaCenters } = useSabhaCenterStore();
   const { fetchYouths } = useYouthsStore();
-  const { handleSubmit, control, reset } = useForm<YouthFormData>({
+  const selectedSabhaCenter = useSabhaSelectorStore(state => state.selectedCity);
+  const [karyakartas, setKaryakartas] = useState<Karyakarta[]>([]);
+  const [loadingKaryakartas, setLoadingKaryakartas] = useState(false);
+  const { handleSubmit, control, reset, formState: { isValid, errors } } = useForm<YouthFormData>({
     defaultValues: initialValues || {
       first_name: "",
       last_name: "",
@@ -61,15 +91,32 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
       origin_city_india: "",
       current_city_germany: "",
       is_active: true,
-      karyakarta_id: 1,
+      is_karyakarta: false,
+      karyakarta_id: 0,
       educational_field: "",
       sabha_center_ids: [],
     },
+    mode: "onChange",
   });
+
+  const fetchKaryakartas = async () => {
+    if (!selectedSabhaCenter) return;
+    
+    setLoadingKaryakartas(true);
+    try {
+      const response = await axios.get(API_ENDPOINTS.YOUTHS_KARYAKARTA(selectedSabhaCenter));
+      setKaryakartas(response.data);
+    } catch (error) {
+      console.error('Error fetching karyakartas:', error);
+    } finally {
+      setLoadingKaryakartas(false);
+    }
+  };
 
   useEffect(() => {
     if (visible) {
       fetchSabhaCenters();
+      fetchKaryakartas();
       if (initialValues) {
         reset({ ...initialValues });
       } else {
@@ -82,20 +129,20 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
           origin_city_india: "",
           current_city_germany: "",
           is_active: true,
-          karyakarta_id: 1,
+          is_karyakarta: false,
+          karyakarta_id: 0,
           educational_field: "",
           sabha_center_ids: [],
         });
       }
     }
-  }, [visible, fetchSabhaCenters, initialValues, reset]);
+  }, [visible, fetchSabhaCenters, selectedSabhaCenter, initialValues, reset]);
 
   const defaultOnSubmit = async (data: YouthFormData) => {
     try {
-      await axios.post('https://onetouch-backend-mi70.onrender.com/api/youths/', {
+      await axios.post(API_ENDPOINTS.YOUTHS, {
         ...data,
         created_at: dayjs().toISOString(),
-        karyakarta_id: 1, // Ensure karyakarta_id is always 1
       });
       await fetchYouths(); // Refresh the youths data
       reset(); // Reset form
@@ -252,9 +299,42 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
             />
 
             <Controller
+              name="karyakarta_id"
+              control={control}
+              rules={{ 
+                required: "Please select a karyakarta",
+                validate: (value) => value > 0 || "Please select a karyakarta"
+              }}
+              render={({ field, fieldState }) => (
+                <FormControl fullWidth error={!!fieldState.error}>
+                  <InputLabel>Karyakarta</InputLabel>
+                  <Select
+                    {...field}
+                    disabled={loadingKaryakartas}
+                    input={<OutlinedInput label="Karyakarta" />}
+                  >
+                    {karyakartas.map((karyakarta) => (
+                      <MenuItem key={karyakarta.id} value={karyakarta.id}>
+                        {karyakarta.first_name} {karyakarta.last_name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {fieldState.error && (
+                    <Box sx={{ color: 'error.main', fontSize: '0.75rem', mt: 0.5 }}>
+                      {fieldState.error.message}
+                    </Box>
+                  )}
+                </FormControl>
+              )}
+            />
+
+            <Controller
               name="sabha_center_ids"
               control={control}
-              rules={{ required: "Please select at least one sabha center" }}
+              rules={{ 
+                required: "Please select at least one sabha center",
+                validate: (value) => (value && value.length > 0) || "Please select at least one sabha center"
+              }}
               render={({ field, fieldState }) => (
                 <FormControl fullWidth error={!!fieldState.error}>
                   <InputLabel>Sabha Centers</InputLabel>
@@ -279,30 +359,58 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
                       </MenuItem>
                     ))}
                   </Select>
+                  {fieldState.error && (
+                    <Box sx={{ color: 'error.main', fontSize: '0.75rem', mt: 0.5 }}>
+                      {fieldState.error.message}
+                    </Box>
+                  )}
                 </FormControl>
               )}
             />
 
-            <Controller
-              name="is_active"
-              control={control}
-              render={({ field }) => (
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={field.value}
-                      onChange={(e) => field.onChange(e.target.checked)}
-                    />
-                  }
-                  label="Active Status"
-                />
-              )}
-            />
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+              <Controller
+                name="is_active"
+                control={control}
+                render={({ field }) => (
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                      />
+                    }
+                    label="Active Status"
+                  />
+                )}
+              />
+
+              <Controller
+                name="is_karyakarta"
+                control={control}
+                render={({ field }) => (
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                      />
+                    }
+                    label="Is Karyakarta"
+                  />
+                )}
+              />
+            </Box>
           </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="contained" color="primary">
+          <Button 
+            type="submit" 
+            variant="contained" 
+            color="primary"
+            disabled={!isValid || Object.keys(errors).length > 0}
+          >
             {submitButtonText}
           </Button>
         </DialogActions>

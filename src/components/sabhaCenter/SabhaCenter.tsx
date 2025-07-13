@@ -23,6 +23,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthProvider';
+import { API_ENDPOINTS } from '../../config/api';
 interface SabhaCenter {
   city: string;
   address: string;
@@ -70,7 +71,7 @@ const SabhaCenter = () => {
   const fetchYouths = async (centerId: number, centerName: string) => {
     setLoadingYouths(true);
     try {
-      const response = await axios.get(`https://onetouch-backend-mi70.onrender.com/api/youths/?sabha_center_id=${centerId}`);
+      const response = await axios.get(API_ENDPOINTS.YOUTHS_BY_SABHA_CENTER(centerId));
       setSelectedCenterYouths(response.data);
       setSelectedCenterName(centerName);
       setYouthDialogOpen(true);
@@ -171,7 +172,7 @@ const SabhaCenter = () => {
 
   const fetchSabhaCenters = async () => {
     try {
-      const response = await axios.get('https://onetouch-backend-mi70.onrender.com/api/sabha_centers/');
+      const response = await axios.get(API_ENDPOINTS.SABHA_CENTERS);
       setData(response.data);
     } catch (error) {
       console.error('Error fetching sabha centers:', error);
@@ -219,7 +220,7 @@ const SabhaCenter = () => {
   const handleFormSubmit = async () => {
     if (formMode === 'add') {
       try {
-        await axios.post('https://onetouch-backend-mi70.onrender.com/api/sabha_centers/', formData);
+        await axios.post(API_ENDPOINTS.SABHA_CENTERS, formData);
         handleFormDialogClose();
         fetchSabhaCenters();
       } catch (error) {
@@ -227,7 +228,7 @@ const SabhaCenter = () => {
       }
     } else if (formMode === 'edit' && editId != null) {
       try {
-        await axios.put(`https://onetouch-backend-mi70.onrender.com/api/sabha_centers/${editId}`, formData);
+        await axios.put(`${API_ENDPOINTS.SABHA_CENTERS}${editId}`, formData);
         handleFormDialogClose();
         fetchSabhaCenters();
       } catch (error) {
@@ -244,7 +245,7 @@ const SabhaCenter = () => {
   const handleDeleteConfirm = async () => {
     if (deleteId == null) return;
     try {
-      await axios.delete(`https://onetouch-backend-mi70.onrender.com/api/sabha_centers/${deleteId}`);
+      await axios.delete(`${API_ENDPOINTS.SABHA_CENTERS}${deleteId}`);
       setDeleteDialogOpen(false);
       setDeleteId(null);
       fetchSabhaCenters();
