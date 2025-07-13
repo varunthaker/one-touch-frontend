@@ -163,11 +163,29 @@ const SabhaList = () => {
     });
   };
 
-  const handleEditAttendees = (sabha: any) => {
+  const handleEditAttendees = async (sabha: any) => {
     setSelectedSabhaForAttendance(sabha);
-    // Initialize with no selections (all absent)
-    setRowSelection({});
     setAttendanceDialogOpen(true);
+    
+    try {
+      // Fetch present youth IDs for this sabha
+      const response = await fetch(`https://onetouch-backend-mi70.onrender.com/api/attendance/${sabha.id}`);
+      const data = await response.json();
+      
+      // Convert present_youth_ids array to rowSelection object
+      const initialRowSelection: {[key: number]: boolean} = {};
+      if (data.present_youth_ids && Array.isArray(data.present_youth_ids)) {
+        data.present_youth_ids.forEach((youthId: number) => {
+          initialRowSelection[youthId] = true;
+        });
+      }
+      
+      setRowSelection(initialRowSelection);
+    } catch (error) {
+      console.error('Error fetching attendance data:', error);
+      // If there's an error, initialize with no selections
+      setRowSelection({});
+    }
   };
 
   const handleSaveAttendance = async () => {
