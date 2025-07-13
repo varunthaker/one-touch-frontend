@@ -33,6 +33,8 @@ const SabhaList = () => {
   const [selectedSabhaForAttendance, setSelectedSabhaForAttendance] = useState<any>(null);
   const [rowSelection, setRowSelection] = useState<{[key: number]: boolean}>({});
   const [confirmCloseDialogOpen, setConfirmCloseDialogOpen] = useState(false);
+  const [presentYouths, setPresentYouths] = useState<any[]>([]);
+  const [loadingPresentYouths, setLoadingPresentYouths] = useState(false);
   interface SabhaFormData {
     topic: string;
     speaker_name: string;
@@ -88,10 +90,7 @@ const SabhaList = () => {
               variant="contained"
               color="primary"
               size="small"
-              onClick={() => {
-                setSelectedSabha(row.original.id);
-                setIsModalOpen(true);
-              }}
+              onClick={() => handleViewAttendees(row.original)}
             >
               View Attendees
             </Button>
@@ -133,6 +132,33 @@ const SabhaList = () => {
 
   const handleCreateSabha = () => {
     setCreateSabhaDialogOpen(true);
+  };
+
+  const handleViewAttendees = async (sabha: any) => {
+    setSelectedSabha(sabha.id);
+    setLoadingPresentYouths(true);
+    setIsModalOpen(true);
+    
+    try {
+      // Fetch present youth IDs for this sabha
+      const response = await fetch(`https://onetouch-backend-mi70.onrender.com/api/attendance/${sabha.id}`);
+      const data = await response.json();
+      
+      // Filter youths to only show present ones
+      if (data.present_youth_ids && Array.isArray(data.present_youth_ids)) {
+        const presentYouthsList = youths.filter((youth: any) => 
+          data.present_youth_ids.includes(youth.id)
+        );
+        setPresentYouths(presentYouthsList);
+      } else {
+        setPresentYouths([]);
+      }
+    } catch (error) {
+      console.error('Error fetching attendance data:', error);
+      setPresentYouths([]);
+    } finally {
+      setLoadingPresentYouths(false);
+    }
   };
 
   const onSubmit = async (data: SabhaFormData) => {
@@ -423,12 +449,14 @@ const SabhaList = () => {
           </Box>
         </DialogTitle>
         <DialogContent>
-          {youthsLoading ? (
-            <Typography>Loading youths...</Typography>
+          {loadingPresentYouths ? (
+            <Typography>Loading attendees...</Typography>
+          ) : presentYouths.length === 0 ? (
+            <Typography>No attendees found for this sabha.</Typography>
           ) : (
             <MaterialReactTable
               columns={youthColumns}
-              data={youths}
+              data={presentYouths}
               enableColumnActions={false}
               enableColumnFilters={false}
               enablePagination={true}
