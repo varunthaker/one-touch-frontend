@@ -498,6 +498,7 @@ const SabhaList = () => {
                 state={{ rowSelection }}
                 enableGlobalFilter={true}
                 enableColumnFilters={true}
+                getRowId={(row) => row.id}
                 muiTablePaperProps={{
                   elevation: 0,
                 }}
