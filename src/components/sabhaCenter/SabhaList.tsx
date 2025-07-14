@@ -16,7 +16,7 @@ import {
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { Close as CloseIcon, Add as AddIcon, Group as GroupIcon, PersonAdd as PersonAddIcon } from '@mui/icons-material';
+import { Close as CloseIcon, Add as AddIcon, Group as GroupIcon, PersonAdd as PersonAddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import useSabhaStore from '../../store/useSabhaStore';
 import useYouthsStore from '../../store/useYouthsStore';
@@ -38,6 +38,11 @@ const SabhaList = () => {
   const [presentYouths, setPresentYouths] = useState<any[]>([]);
   const [loadingPresentYouths, setLoadingPresentYouths] = useState(false);
   const [youthFormOpen, setYouthFormOpen] = useState(false);
+  const [deleteConfirmDialogOpen, setDeleteConfirmDialogOpen] = useState(false);
+  const [selectedSabhaForDelete, setSelectedSabhaForDelete] = useState<any>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedSabhaForEdit, setSelectedSabhaForEdit] = useState<any>(null);
+  
   interface SabhaFormData {
     topic: string;
     speaker_name: string;
@@ -112,8 +117,30 @@ const SabhaList = () => {
         header: 'Sabha ID',
         size: 20
       },
+      ...(roles?.includes('superadmin') ? [{
+        id: 'actions',
+        header: 'Actions',
+        Cell: ({ row }: { row: any }) => (
+          <Box sx={{ display: 'flex', gap: '0.5rem' }}>
+            <IconButton
+              size="small"
+              color="primary"
+              onClick={() => handleEditSabha(row.original)}
+            >
+              <EditIcon />
+            </IconButton>
+            <IconButton
+              size="small"
+              color="error"
+              onClick={() => handleDeleteSabha(row.original)}
+            >
+              <DeleteIcon />
+            </IconButton>
+          </Box>
+        ),
+      }] : []),
     ],
-    [youths]
+    [youths, roles]
   );
 
   const youthColumns = useMemo<MRT_ColumnDef<any>[]>(
@@ -135,6 +162,13 @@ const SabhaList = () => {
   );
 
   const handleCreateSabha = () => {
+    setIsEditMode(false);
+    setSelectedSabhaForEdit(null);
+    reset({
+      topic: '',
+      speaker_name: '',
+      date: dayjs().format('YYYY-MM-DD')
+    });
     setCreateSabhaDialogOpen(true);
   };
 
@@ -167,21 +201,49 @@ const SabhaList = () => {
 
   const onSubmit = async (data: SabhaFormData) => {
     try {
-      await fetch(API_ENDPOINTS.SABHAS, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...data,
-          sabha_center_id: selectedSabhaCenter
-        })
-      });
+      if (isEditMode && selectedSabhaForEdit) {
+        // Edit existing sabha
+        const response = await fetch(`${API_ENDPOINTS.SABHAS}${selectedSabhaForEdit.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...data,
+            sabha_center_id: selectedSabhaCenter
+          })
+        });
+        
+        if (!response.ok) {
+          console.error('Error updating sabha:', response.statusText);
+          return;
+        }
+      } else {
+        // Create new sabha
+        const response = await fetch(API_ENDPOINTS.SABHAS, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...data,
+            sabha_center_id: selectedSabhaCenter
+          })
+        });
+        
+        if (!response.ok) {
+          console.error('Error creating sabha:', response.statusText);
+          return;
+        }
+      }
+      
       setCreateSabhaDialogOpen(false);
+      setIsEditMode(false);
+      setSelectedSabhaForEdit(null);
       reset();
       fetchSabhas(); // Refresh the table
     } catch (error) {
-      console.error('Error creating sabha:', error);
+      console.error('Error saving sabha:', error);
     }
   };
 
@@ -189,6 +251,8 @@ const SabhaList = () => {
 
     const handleFormClose = () => {
     setCreateSabhaDialogOpen(false);
+    setIsEditMode(false);
+    setSelectedSabhaForEdit(null);
     reset();
   };
 
@@ -278,6 +342,47 @@ const SabhaList = () => {
   const handleYouthFormClose = () => {
     setYouthFormOpen(false);
   };
+
+  const handleEditSabha = (sabha: any) => {
+    setIsEditMode(true);
+    setSelectedSabhaForEdit(sabha);
+    reset({
+      topic: sabha.topic,
+      speaker_name: sabha.speaker_name,
+      date: sabha.date
+    });
+    setCreateSabhaDialogOpen(true);
+  };
+
+  const handleDeleteSabha = (sabha: any) => {
+    setSelectedSabhaForDelete(sabha);
+    setDeleteConfirmDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedSabhaForDelete) return;
+    
+    try {
+      const response = await fetch(`${API_ENDPOINTS.SABHAS}${selectedSabhaForDelete.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        setDeleteConfirmDialogOpen(false);
+        setSelectedSabhaForDelete(null);
+        fetchSabhas(); // Refresh the table
+      } else {
+        console.error('Error deleting sabha:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error deleting sabha:', error);
+    }
+  };
+
+
 
   const handleYouthCreated = async (data: any) => {
     try {
@@ -413,7 +518,7 @@ const SabhaList = () => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Create New Sabha</DialogTitle>
+        <DialogTitle>{isEditMode ? 'Edit Sabha' : 'Create New Sabha'}</DialogTitle>
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogContent>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
@@ -480,7 +585,7 @@ const SabhaList = () => {
               variant="contained"
               disabled={!isValid}
             >
-              Create
+              {isEditMode ? 'Update' : 'Create'}
             </Button>
           </DialogActions>
         </form>
@@ -603,6 +708,22 @@ const SabhaList = () => {
         submitButtonText="Create Youth"
         onSubmit={handleYouthCreated}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmDialogOpen} onClose={() => setDeleteConfirmDialogOpen(false)} maxWidth="xs">
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete the sabha "{selectedSabhaForDelete?.topic}"? This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteConfirmDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleConfirmDelete} color="error" variant="contained">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
