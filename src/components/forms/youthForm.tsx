@@ -162,7 +162,15 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
       <DialogTitle>{dialogTitle}</DialogTitle>
       <form onSubmit={handleSubmit(onSubmit || defaultOnSubmit)}>
         <DialogContent>
-          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: 'repeat(2, 1fr)', my: 2 }}>
+          <Box sx={{ 
+            display: 'grid', 
+            gap: 2, 
+            gridTemplateColumns: { 
+              xs: '1fr',      // 1 column on extra small screens
+              sm: 'repeat(2, 1fr)'  // 2 columns on small screens and up
+            }, 
+            my: 2 
+          }}>
             <Controller
               name="first_name"
               control={control}
