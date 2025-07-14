@@ -68,24 +68,6 @@ const SabhaList = () => {
   const sabhaColumns = useMemo<MRT_ColumnDef<any>[]>(
     () => [
       {
-        accessorKey: 'id',
-        header: 'Sabha ID',
-        size: 20
-      },
-      {
-        accessorKey: 'topic',
-        header: 'Sabha Topic',
-      },
-      {
-        accessorKey: 'speaker_name',
-        header: 'Speaker Name',
-      },
-      {
-        accessorKey: 'date',
-        header: 'Date',
-        Cell: ({ cell }) => dayjs(cell.getValue<string>()).format('DD-MM-YYYY'),
-      },
-      {
         id: 'attendees',
         header: 'Attendees',
         Cell: ({ row }) => (
@@ -111,6 +93,24 @@ const SabhaList = () => {
             )}
           </Box>
         ),
+      },
+      {
+        accessorKey: 'topic',
+        header: 'Sabha Topic',
+      },
+      {
+        accessorKey: 'date',
+        header: 'Date',
+        Cell: ({ cell }) => dayjs(cell.getValue<string>()).format('DD-MM-YYYY'),
+      },
+      {
+        accessorKey: 'speaker_name',
+        header: 'Speaker Name',
+      },
+      {
+        accessorKey: 'id',
+        header: 'Sabha ID',
+        size: 20
       },
     ],
     [youths]
