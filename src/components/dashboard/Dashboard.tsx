@@ -49,7 +49,7 @@ import useYouthsStore from '../../store/useYouthsStore';
 import useSabhaCenterStore from '../../store/useSabhaCenterStore';
 import useSabhaSelectorStore from '../../store/useSabhaSelectorStore';
 import { API_ENDPOINTS } from '../../config/api';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 
 dayjs.extend(isBetween);
 dayjs.extend(weekOfYear);
@@ -72,8 +72,9 @@ function Dashboard() {
   const selectedSabhaCenter = useSabhaSelectorStore(state => state.selectedCity);
   
   const [centerStats, setCenterStats] = useState<any[]>([]);
-  const [karyakartaStats, setKaryakartaStats] = useState<any[]>([]);
+  const [, setKaryakartaStats] = useState<any[]>([]);
   const [loadingStats, setLoadingStats] = useState(false);
+  const [loadingKaryakartaStats, setLoadingKaryakartaStats] = useState(false);
   const [attendanceChartData, setAttendanceChartData] = useState<any[]>([]);
   const [karyakartaChartData, setKaryakartaChartData] = useState<any>(null);
   const [globalDateRange, setGlobalDateRange] = useState<{fromDate: any, toDate: any}>({
@@ -82,7 +83,14 @@ function Dashboard() {
   });
   const [lastNSabhas, setLastNSabhas] = useState<number>(5);
   const [isFilterCollapsed, setIsFilterCollapsed] = useState(true);
-  const [filterType, setFilterType] = useState<'date' | 'lastN'>('date');
+  
+  // Applied filters - these are the actual values used for calculations
+  const [appliedDateRange, setAppliedDateRange] = useState<{fromDate: any, toDate: any}>({
+    fromDate: dayjs().subtract(1, 'month'),
+    toDate: dayjs()
+  });
+  const [appliedLastNSabhas, setAppliedLastNSabhas] = useState<number>(5);
+  const [appliedFilterType, setAppliedFilterType] = useState<'date' | 'lastN'>('date');
 
   useEffect(() => {
     fetchYouths();
@@ -93,7 +101,102 @@ function Dashboard() {
     if (sabhaCenters.length > 0) {
       fetchStatistics();
     }
-  }, [sabhaCenters, selectedSabhaCenter, globalDateRange, lastNSabhas, filterType]);
+  }, [sabhaCenters, appliedDateRange, appliedLastNSabhas, appliedFilterType]);
+
+  // Separate useEffect for karyakarta statistics - not dependent on filters
+  useEffect(() => {
+    if (selectedSabhaCenter && sabhaCenters.length > 0) {
+      fetchKaryakartaStats();
+    } else {
+      setKaryakartaStats([]);
+      setKaryakartaChartData(null);
+      setLoadingKaryakartaStats(false);
+    }
+  }, [selectedSabhaCenter, sabhaCenters]);
+
+  const fetchKaryakartaStats = useCallback(async () => {
+    if (!selectedSabhaCenter) return;
+    setLoadingKaryakartaStats(true);
+    try {
+      const karyakartaResponse = await fetch(API_ENDPOINTS.YOUTHS_KARYAKARTA(selectedSabhaCenter));
+      const karyakartas = await karyakartaResponse.json();
+      
+      // Fetch youth count for each karyakarta
+      const karyakartaWithYouthCount = await Promise.all(
+        karyakartas.map(async (karyakarta: any) => {
+          try {
+            const youthResponse = await fetch(`${API_ENDPOINTS.YOUTHS}by-karyakarta/${karyakarta.id}`);
+            const youths = await youthResponse.json();
+            return {
+              karyakartaId: karyakarta.id,
+              karyakartaName: `${karyakarta.first_name} ${karyakarta.last_name}`,
+              centerName: sabhaCenters.find(center => center.id === selectedSabhaCenter)?.name || 'Unknown Center',
+              youthCount: youths.length,
+              youths: youths // Store the actual youth data for potential future use
+            };
+          } catch (error) {
+            console.error(`Error fetching youths for karyakarta ${karyakarta.id}:`, error);
+            return {
+              karyakartaId: karyakarta.id,
+              karyakartaName: `${karyakarta.first_name} ${karyakarta.last_name}`,
+              centerName: sabhaCenters.find(center => center.id === selectedSabhaCenter)?.name || 'Unknown Center',
+              youthCount: 0,
+              youths: []
+            };
+          }
+        })
+      );
+      
+      setKaryakartaStats(karyakartaWithYouthCount);
+      
+      // Prepare karyakarta chart data for selected center
+      if (karyakartaWithYouthCount.length > 0) {
+        const chartLabels = karyakartaWithYouthCount.map(karyakarta => karyakarta.karyakartaName);
+        const youthCounts = karyakartaWithYouthCount.map(karyakarta => karyakarta.youthCount);
+        const youthNames = karyakartaWithYouthCount.map(karyakarta => 
+          karyakarta.youths?.map((youth: any) => youth.name).join(', ') || 'No youths assigned'
+        );
+        
+        // Generate different colors for each karyakarta
+        const colors = [
+          'rgba(255, 99, 132, 0.8)',
+          'rgba(54, 162, 235, 0.8)',
+          'rgba(255, 206, 86, 0.8)',
+          'rgba(75, 192, 192, 0.8)',
+          'rgba(153, 102, 255, 0.8)',
+          'rgba(255, 159, 64, 0.8)',
+          'rgba(199, 199, 199, 0.8)',
+          'rgba(83, 102, 255, 0.8)',
+        ];
+        
+        const karyakartaChart = {
+          labels: chartLabels,
+          datasets: [
+            {
+              label: 'Youths Assigned',
+              data: youthCounts,
+              backgroundColor: colors.slice(0, karyakartaWithYouthCount.length),
+              borderColor: colors.slice(0, karyakartaWithYouthCount.length).map(color => color.replace('0.8', '1')),
+              borderWidth: 2,
+              borderRadius: 8,
+              borderSkipped: false,
+              youthNames: youthNames, // Store youth names for tooltip
+            },
+          ],
+        };
+        
+        setKaryakartaChartData(karyakartaChart);
+      } else {
+        setKaryakartaChartData(null);
+      }
+    } catch (error) {
+      console.error(`Error fetching karyakartas for selected center ${selectedSabhaCenter}:`, error);
+      setKaryakartaStats([]);
+      setKaryakartaChartData(null);
+    } finally {
+      setLoadingKaryakartaStats(false);
+    }
+  }, [selectedSabhaCenter, sabhaCenters]);
 
   const fetchStatistics = async () => {
     setLoadingStats(true);
@@ -103,20 +206,20 @@ function Dashboard() {
         const sabhasResponse = await fetch(`${API_ENDPOINTS.SABHAS}?sabha_center_id=${center.id}`);
         const sabhas = await sabhasResponse.json();
         
-        // Filter sabhas based on filter type
+        // Filter sabhas based on applied filter type
         let filteredSabhas;
-        if (filterType === 'date') {
+        if (appliedFilterType === 'date') {
           // Filter by date range
           filteredSabhas = sabhas.filter((sabha: any) => {
             const sabhaDate = dayjs(sabha.date);
-            return sabhaDate.isBetween(globalDateRange.fromDate, globalDateRange.toDate, 'day', '[]');
+            return sabhaDate.isBetween(appliedDateRange.fromDate, appliedDateRange.toDate, 'day', '[]');
           });
         } else {
           // Filter by last N sabhas
           const sortedSabhas = sabhas.sort((a: any, b: any) => 
             dayjs(b.date).isAfter(dayjs(a.date)) ? 1 : -1
           );
-          filteredSabhas = sortedSabhas.slice(0, lastNSabhas);
+          filteredSabhas = sortedSabhas.slice(0, appliedLastNSabhas);
         }
         
         // Get sabhas in the date range
@@ -154,7 +257,7 @@ function Dashboard() {
           totalSabhas: sabhasInRange.length,
           lastSabhaDate: sabhasInRange.length > 0 ? dayjs(sabhasInRange[sabhasInRange.length - 1].date).format('DD-MM-YYYY') : 'No sabhas',
           totalYouths: totalYouths,
-          dateRange: globalDateRange
+          dateRange: appliedDateRange
         };
       });
       
@@ -167,20 +270,20 @@ function Dashboard() {
           const sabhasResponse = await fetch(`${API_ENDPOINTS.SABHAS}?sabha_center_id=${center.id}`);
           const sabhas = await sabhasResponse.json();
           
-          // Filter sabhas based on filter type for charts
+          // Filter sabhas based on applied filter type for charts
           let filteredSabhas;
-          if (filterType === 'date') {
+          if (appliedFilterType === 'date') {
             // Filter by date range
             filteredSabhas = sabhas.filter((sabha: any) => {
               const sabhaDate = dayjs(sabha.date);
-              return sabhaDate.isBetween(globalDateRange.fromDate, globalDateRange.toDate, 'day', '[]');
+              return sabhaDate.isBetween(appliedDateRange.fromDate, appliedDateRange.toDate, 'day', '[]');
             });
           } else {
             // Filter by last N sabhas
             const sortedSabhas = sabhas.sort((a: any, b: any) => 
               dayjs(b.date).isAfter(dayjs(a.date)) ? 1 : -1
             );
-            filteredSabhas = sortedSabhas.slice(0, lastNSabhas);
+            filteredSabhas = sortedSabhas.slice(0, appliedLastNSabhas);
           }
           
           // Sort sabhas by date (oldest first)
@@ -221,7 +324,7 @@ function Dashboard() {
                 },
               ],
             },
-            dateRange: globalDateRange
+            dateRange: appliedDateRange
           };
         } catch (error) {
           console.error(`Error preparing chart data for center ${center.id}:`, error);
@@ -235,88 +338,6 @@ function Dashboard() {
       
       const allChartData = await Promise.all(chartDataPromises);
       setAttendanceChartData(allChartData);
-      
-      // Fetch karyakarta statistics only for selected center
-      if (selectedSabhaCenter) {
-        try {
-          const karyakartaResponse = await fetch(API_ENDPOINTS.YOUTHS_KARYAKARTA(selectedSabhaCenter));
-          const karyakartas = await karyakartaResponse.json();
-          
-          // Fetch youth count for each karyakarta
-          const karyakartaWithYouthCount = await Promise.all(
-            karyakartas.map(async (karyakarta: any) => {
-              try {
-                const youthResponse = await fetch(`${API_ENDPOINTS.YOUTHS}by-karyakarta/${karyakarta.id}`);
-                const youths = await youthResponse.json();
-                return {
-                  karyakartaId: karyakarta.id,
-                  karyakartaName: `${karyakarta.first_name} ${karyakarta.last_name}`,
-                  centerName: sabhaCenters.find(center => center.id === selectedSabhaCenter)?.name || 'Unknown Center',
-                  youthCount: youths.length,
-                  youths: youths // Store the actual youth data for potential future use
-                };
-              } catch (error) {
-                console.error(`Error fetching youths for karyakarta ${karyakarta.id}:`, error);
-                return {
-                  karyakartaId: karyakarta.id,
-                  karyakartaName: `${karyakarta.first_name} ${karyakarta.last_name}`,
-                  centerName: sabhaCenters.find(center => center.id === selectedSabhaCenter)?.name || 'Unknown Center',
-                  youthCount: 0,
-                  youths: []
-                };
-              }
-            })
-          );
-          
-          setKaryakartaStats(karyakartaWithYouthCount);
-        } catch (error) {
-          console.error(`Error fetching karyakartas for selected center ${selectedSabhaCenter}:`, error);
-          setKaryakartaStats([]);
-        }
-      } else {
-        setKaryakartaStats([]);
-      }
-      
-      // Prepare karyakarta chart data for selected center
-      if (selectedSabhaCenter && karyakartaStats.length > 0) {
-        const chartLabels = karyakartaStats.map(karyakarta => karyakarta.karyakartaName);
-        const youthCounts = karyakartaStats.map(karyakarta => karyakarta.youthCount);
-        const youthNames = karyakartaStats.map(karyakarta => 
-          karyakarta.youths?.map((youth: any) => youth.name).join(', ') || 'No youths assigned'
-        );
-        
-        // Generate different colors for each karyakarta
-        const colors = [
-          'rgba(255, 99, 132, 0.8)',
-          'rgba(54, 162, 235, 0.8)',
-          'rgba(255, 206, 86, 0.8)',
-          'rgba(75, 192, 192, 0.8)',
-          'rgba(153, 102, 255, 0.8)',
-          'rgba(255, 159, 64, 0.8)',
-          'rgba(199, 199, 199, 0.8)',
-          'rgba(83, 102, 255, 0.8)',
-        ];
-        
-        const karyakartaChart = {
-          labels: chartLabels,
-          datasets: [
-            {
-              label: 'Youths Assigned',
-              data: youthCounts,
-              backgroundColor: colors.slice(0, karyakartaStats.length),
-              borderColor: colors.slice(0, karyakartaStats.length).map(color => color.replace('0.8', '1')),
-              borderWidth: 2,
-              borderRadius: 8,
-              borderSkipped: false,
-              youthNames: youthNames, // Store youth names for tooltip
-            },
-          ],
-        };
-        
-        setKaryakartaChartData(karyakartaChart);
-      } else {
-        setKaryakartaChartData(null);
-      }
       
     } catch (error) {
       console.error('Error fetching statistics:', error);
@@ -378,8 +399,11 @@ function Dashboard() {
                     variant="contained"
                     size="small"
                     startIcon={<CheckIcon />}
-                    onClick={() => setFilterType('date')}
-                    color={filterType === 'date' ? 'primary' : 'inherit'}
+                    onClick={() => {
+                      setAppliedDateRange(globalDateRange);
+                      setAppliedFilterType('date');
+                    }}
+                    color={appliedFilterType === 'date' ? 'primary' : 'inherit'}
                   >
                     Apply
                   </Button>
@@ -443,8 +467,11 @@ function Dashboard() {
                     variant="contained"
                     size="small"
                     startIcon={<CheckIcon />}
-                    onClick={() => setFilterType('lastN')}
-                    color={filterType === 'lastN' ? 'primary' : 'inherit'}
+                    onClick={() => {
+                      setAppliedLastNSabhas(lastNSabhas);
+                      setAppliedFilterType('lastN');
+                    }}
+                    color={appliedFilterType === 'lastN' ? 'primary' : 'inherit'}
                   >
                     Apply
                   </Button>
@@ -507,9 +534,9 @@ function Dashboard() {
                   title={stat.centerName}
                   avatar={<LocationOnIcon color="primary" />}
                   subheader={
-                    filterType === 'date' 
-                      ? `${globalDateRange.fromDate.format('DD/MM/YYYY')} - ${globalDateRange.toDate.format('DD/MM/YYYY')}`
-                      : `Last ${lastNSabhas} sabhas`
+                    appliedFilterType === 'date' 
+                      ? `${appliedDateRange.fromDate.format('DD/MM/YYYY')} - ${appliedDateRange.toDate.format('DD/MM/YYYY')}`
+                      : `Last ${appliedLastNSabhas} sabhas`
                   }
                 />
                 <CardContent>
@@ -579,9 +606,9 @@ function Dashboard() {
                     title={`${centerChart.centerName} - Attendance Progress`}
                     avatar={<TrendingUpIcon color="primary" />}
                     subheader={
-                      filterType === 'date' 
-                        ? `${globalDateRange.fromDate.format('DD/MM/YYYY')} - ${globalDateRange.toDate.format('DD/MM/YYYY')}`
-                        : `Last ${lastNSabhas} sabhas`
+                      appliedFilterType === 'date' 
+                        ? `${appliedDateRange.fromDate.format('DD/MM/YYYY')} - ${appliedDateRange.toDate.format('DD/MM/YYYY')}`
+                        : `Last ${appliedLastNSabhas} sabhas`
                     }
                   />
                   <CardContent sx={{ height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -670,7 +697,7 @@ function Dashboard() {
               subheader="Distribution of youths across karyakartas"
             />
             <CardContent sx={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {loadingStats ? (
+              {loadingKaryakartaStats ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <LinearProgress sx={{ width: '200px', mb: 2 }} />
                   <Typography>Loading karyakarta data...</Typography>
