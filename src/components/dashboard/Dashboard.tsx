@@ -503,7 +503,7 @@ function Dashboard() {
       {loadingStats ? (
         <Box sx={{ mb: 3 }}>
           <LinearProgress />
-          <Typography sx={{ mt: 1 }}>Loading statistics...</Typography>
+          <Typography sx={{ mt: 1 }}>Loading Average Attendance...</Typography>
         </Box>
       ) : (
         <Box sx={{ mb: 4 }}>
@@ -587,7 +587,7 @@ function Dashboard() {
                 p: 4
               }}>
                 <LinearProgress sx={{ width: '200px', mb: 2 }} />
-                <Typography>Loading chart data...</Typography>
+                <Typography>Loading Attendance Trends data...</Typography>
               </Box>
             ) : attendanceChartData.length > 0 ? (
               attendanceChartData.map((centerChart) => (
