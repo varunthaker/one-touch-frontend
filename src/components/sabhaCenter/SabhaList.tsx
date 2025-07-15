@@ -47,13 +47,15 @@ const SabhaList = () => {
     topic: string;
     speaker_name: string;
     date: string;
+    food: string;
   }
 
   const { handleSubmit, control, reset, formState: { isValid } } = useForm<SabhaFormData>({
     defaultValues: {
       topic: '',
       speaker_name: '',
-      date: dayjs().format('YYYY-MM-DD')
+      date: dayjs().format('YYYY-MM-DD'),
+      food: ''
     },
     mode: 'onChange'
   });
@@ -113,6 +115,10 @@ const SabhaList = () => {
         header: 'Speaker Name',
       },
       {
+        accessorKey: 'food',
+        header: 'Food',
+      },
+      {
         accessorKey: 'id',
         header: 'Sabha ID',
         size: 20
@@ -167,7 +173,8 @@ const SabhaList = () => {
     reset({
       topic: '',
       speaker_name: '',
-      date: dayjs().format('YYYY-MM-DD')
+      date: dayjs().format('YYYY-MM-DD'),
+      food: ''
     });
     setCreateSabhaDialogOpen(true);
   };
@@ -349,7 +356,8 @@ const SabhaList = () => {
     reset({
       topic: sabha.topic,
       speaker_name: sabha.speaker_name,
-      date: sabha.date
+      date: sabha.date,
+      food: sabha.food || ''
     });
     setCreateSabhaDialogOpen(true);
   };
@@ -545,6 +553,21 @@ const SabhaList = () => {
                   <TextField
                     {...field}
                     label="Speaker Name"
+                    fullWidth
+                    required
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                  />
+                )}
+              />
+              <Controller
+                name="food"
+                control={control}
+                rules={{ required: "Food is required" }}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    label="Food"
                     fullWidth
                     required
                     error={!!fieldState.error}
