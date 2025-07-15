@@ -8,17 +8,26 @@ import {
   AccordionSummary, 
   AccordionDetails,
   Chip,
-  LinearProgress
+  LinearProgress,
+  Collapse,
+  IconButton,
+  TextField,
+  Button,
+  Divider
 } from "@mui/material";
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import FilterListIcon from '@mui/icons-material/FilterList';
 import CakeIcon from '@mui/icons-material/Cake';
 import EventIcon from '@mui/icons-material/Event';
 import PeopleIcon from '@mui/icons-material/People';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import CheckIcon from '@mui/icons-material/Check';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import HistoryIcon from '@mui/icons-material/History';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -67,8 +76,13 @@ function Dashboard() {
   const [loadingStats, setLoadingStats] = useState(false);
   const [attendanceChartData, setAttendanceChartData] = useState<any[]>([]);
   const [karyakartaChartData, setKaryakartaChartData] = useState<any>(null);
-  const [dateRanges, setDateRanges] = useState<{[key: string]: {fromDate: any, toDate: any}}>({});
-  const [attendanceChartDateRanges, setAttendanceChartDateRanges] = useState<{[key: string]: {fromDate: any, toDate: any}}>({});
+  const [globalDateRange, setGlobalDateRange] = useState<{fromDate: any, toDate: any}>({
+    fromDate: dayjs().subtract(1, 'month'),
+    toDate: dayjs()
+  });
+  const [lastNSabhas, setLastNSabhas] = useState<number>(5);
+  const [isFilterCollapsed, setIsFilterCollapsed] = useState(true);
+  const [filterType, setFilterType] = useState<'date' | 'lastN'>('date');
 
   useEffect(() => {
     fetchYouths();
@@ -79,7 +93,7 @@ function Dashboard() {
     if (sabhaCenters.length > 0) {
       fetchStatistics();
     }
-  }, [sabhaCenters, selectedSabhaCenter, dateRanges, attendanceChartDateRanges]);
+  }, [sabhaCenters, selectedSabhaCenter, globalDateRange, lastNSabhas, filterType]);
 
   const fetchStatistics = async () => {
     setLoadingStats(true);
@@ -89,17 +103,21 @@ function Dashboard() {
         const sabhasResponse = await fetch(`${API_ENDPOINTS.SABHAS}?sabha_center_id=${center.id}`);
         const sabhas = await sabhasResponse.json();
         
-        // Get date range for this center (default to 1 month ago to today if not set)
-        const centerDateRange = dateRanges[center.id] || {
-          fromDate: dayjs().subtract(1, 'month'),
-          toDate: dayjs()
-        };
-        
-        // Filter sabhas within the selected date range
-        const filteredSabhas = sabhas.filter((sabha: any) => {
-          const sabhaDate = dayjs(sabha.date);
-          return sabhaDate.isBetween(centerDateRange.fromDate, centerDateRange.toDate, 'day', '[]');
-        });
+        // Filter sabhas based on filter type
+        let filteredSabhas;
+        if (filterType === 'date') {
+          // Filter by date range
+          filteredSabhas = sabhas.filter((sabha: any) => {
+            const sabhaDate = dayjs(sabha.date);
+            return sabhaDate.isBetween(globalDateRange.fromDate, globalDateRange.toDate, 'day', '[]');
+          });
+        } else {
+          // Filter by last N sabhas
+          const sortedSabhas = sabhas.sort((a: any, b: any) => 
+            dayjs(b.date).isAfter(dayjs(a.date)) ? 1 : -1
+          );
+          filteredSabhas = sortedSabhas.slice(0, lastNSabhas);
+        }
         
         // Get sabhas in the date range
         const sabhasInRange = filteredSabhas;
@@ -136,7 +154,7 @@ function Dashboard() {
           totalSabhas: sabhasInRange.length,
           lastSabhaDate: sabhasInRange.length > 0 ? dayjs(sabhasInRange[sabhasInRange.length - 1].date).format('DD-MM-YYYY') : 'No sabhas',
           totalYouths: totalYouths,
-          dateRange: centerDateRange
+          dateRange: globalDateRange
         };
       });
       
@@ -149,17 +167,21 @@ function Dashboard() {
           const sabhasResponse = await fetch(`${API_ENDPOINTS.SABHAS}?sabha_center_id=${center.id}`);
           const sabhas = await sabhasResponse.json();
           
-          // Get date range for this center's attendance chart (default to 1 month ago to today if not set)
-          const centerChartDateRange = attendanceChartDateRanges[center.id] || {
-            fromDate: dayjs().subtract(1, 'month'),
-            toDate: dayjs()
-          };
-          
-          // Filter sabhas within the attendance chart date range
-          const filteredSabhas = sabhas.filter((sabha: any) => {
-            const sabhaDate = dayjs(sabha.date);
-            return sabhaDate.isBetween(centerChartDateRange.fromDate, centerChartDateRange.toDate, 'day', '[]');
-          });
+          // Filter sabhas based on filter type for charts
+          let filteredSabhas;
+          if (filterType === 'date') {
+            // Filter by date range
+            filteredSabhas = sabhas.filter((sabha: any) => {
+              const sabhaDate = dayjs(sabha.date);
+              return sabhaDate.isBetween(globalDateRange.fromDate, globalDateRange.toDate, 'day', '[]');
+            });
+          } else {
+            // Filter by last N sabhas
+            const sortedSabhas = sabhas.sort((a: any, b: any) => 
+              dayjs(b.date).isAfter(dayjs(a.date)) ? 1 : -1
+            );
+            filteredSabhas = sortedSabhas.slice(0, lastNSabhas);
+          }
           
           // Sort sabhas by date (oldest first)
           const sortedSabhas = filteredSabhas.sort((a: any, b: any) => 
@@ -199,7 +221,7 @@ function Dashboard() {
                 },
               ],
             },
-            dateRange: centerChartDateRange
+            dateRange: globalDateRange
           };
         } catch (error) {
           console.error(`Error preparing chart data for center ${center.id}:`, error);
@@ -321,6 +343,135 @@ function Dashboard() {
         Dashboard
       </Typography>
 
+      {/* Filter Section */}
+      <Box sx={{ mb: 3 }}>
+        <Card elevation={2}>
+          <CardHeader
+            title="Filters"
+            avatar={<FilterListIcon color="primary" />}
+            action={
+              <IconButton
+                onClick={() => setIsFilterCollapsed(!isFilterCollapsed)}
+                sx={{ transform: isFilterCollapsed ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform 0.3s' }}
+              >
+                <ExpandMoreIcon />
+              </IconButton>
+            }
+            onClick={() => setIsFilterCollapsed(!isFilterCollapsed)}
+            sx={{ 
+              cursor: 'pointer',
+              '&:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.04)'
+              }
+            }}
+          />
+          <Collapse in={!isFilterCollapsed}>
+            <CardContent>
+              {/* Date Range Filter */}
+              <Box sx={{ mb: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <CalendarTodayIcon color="primary" sx={{ mr: 1 }} />
+                  <Typography variant="h6" sx={{ flex: 1 }}>
+                    Date Range Filter
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    startIcon={<CheckIcon />}
+                    onClick={() => setFilterType('date')}
+                    color={filterType === 'date' ? 'primary' : 'inherit'}
+                  >
+                    Apply
+                  </Button>
+                </Box>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    gap: 2, 
+                    alignItems: 'center',
+                    flexWrap: 'wrap'
+                  }}>
+                    <DatePicker
+                      label="From Date"
+                      value={globalDateRange.fromDate}
+                      onChange={(newValue) => {
+                        setGlobalDateRange(prev => ({
+                          ...prev,
+                          fromDate: newValue || dayjs().subtract(1, 'month')
+                        }));
+                      }}
+                      slotProps={{
+                        textField: {
+                          size: 'medium',
+                          sx: { minWidth: '200px' }
+                        }
+                      }}
+                    />
+                    <Typography variant="body1" color="textSecondary">
+                      to
+                    </Typography>
+                    <DatePicker
+                      label="To Date"
+                      value={globalDateRange.toDate}
+                      onChange={(newValue) => {
+                        setGlobalDateRange(prev => ({
+                          ...prev,
+                          toDate: newValue || dayjs()
+                        }));
+                      }}
+                      slotProps={{
+                        textField: {
+                          size: 'medium',
+                          sx: { minWidth: '200px' }
+                        }
+                      }}
+                    />
+                  </Box>
+                </LocalizationProvider>
+              </Box>
+
+              <Divider sx={{ my: 2 }} />
+
+              {/* Last N Sabhas Filter */}
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <HistoryIcon color="secondary" sx={{ mr: 1 }} />
+                  <Typography variant="h6" sx={{ flex: 1 }}>
+                    Last N Sabhas Filter
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    startIcon={<CheckIcon />}
+                    onClick={() => setFilterType('lastN')}
+                    color={filterType === 'lastN' ? 'primary' : 'inherit'}
+                  >
+                    Apply
+                  </Button>
+                </Box>
+                <Box sx={{ 
+                  display: 'flex', 
+                  gap: 2, 
+                  alignItems: 'center',
+                  flexWrap: 'wrap'
+                }}>
+                  <TextField
+                    label="Number of Sabhas"
+                    type="number"
+                    value={lastNSabhas}
+                    onChange={(e) => setLastNSabhas(parseInt(e.target.value))}
+                    size="medium"
+                    sx={{ minWidth: '200px' }}
+                    inputProps={{ min: 1, max: 50 }}
+                    helperText="Enter number of recent sabhas to include"
+                  />
+                </Box>
+              </Box>
+            </CardContent>
+          </Collapse>
+        </Card>
+      </Box>
+
       {/* Statistics Section */}
       {loadingStats ? (
         <Box sx={{ mb: 3 }}>
@@ -355,61 +506,13 @@ function Dashboard() {
                 <CardHeader 
                   title={stat.centerName}
                   avatar={<LocationOnIcon color="primary" />}
-                  subheader={stat.dateRange ? `${stat.dateRange.fromDate.format('DD/MM/YYYY')} - ${stat.dateRange.toDate.format('DD/MM/YYYY')}` : 'Select date range'}
+                  subheader={
+                    filterType === 'date' 
+                      ? `${globalDateRange.fromDate.format('DD/MM/YYYY')} - ${globalDateRange.toDate.format('DD/MM/YYYY')}`
+                      : `Last ${lastNSabhas} sabhas`
+                  }
                 />
                 <CardContent>
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <Box sx={{ 
-                      display: 'flex', 
-                      gap: 1, 
-                      mb: 2, 
-                      alignItems: 'center',
-                      flexWrap: 'wrap'
-                    }}>
-                      <DatePicker
-                        label="From"
-                        value={stat.dateRange?.fromDate || dayjs().subtract(1, 'month')}
-                        onChange={(newValue) => {
-                          setDateRanges(prev => ({
-                            ...prev,
-                            [stat.centerId]: {
-                              ...prev[stat.centerId] || { toDate: dayjs() },
-                              fromDate: newValue || dayjs().subtract(1, 'month')
-                            }
-                          }));
-                        }}
-                        slotProps={{
-                          textField: {
-                            size: 'small',
-                            sx: { minWidth: '120px', fontSize: '0.75rem' }
-                          }
-                        }}
-                      />
-                      <Typography variant="caption" color="textSecondary">
-                        to
-                      </Typography>
-                      <DatePicker
-                        label="To"
-                        value={stat.dateRange?.toDate || dayjs()}
-                        onChange={(newValue) => {
-                          setDateRanges(prev => ({
-                            ...prev,
-                            [stat.centerId]: {
-                              ...prev[stat.centerId] || { fromDate: dayjs().subtract(1, 'month') },
-                              toDate: newValue || dayjs()
-                            }
-                          }));
-                        }}
-                        slotProps={{
-                          textField: {
-                            size: 'small',
-                            sx: { minWidth: '120px', fontSize: '0.75rem' }
-                          }
-                        }}
-                      />
-                    </Box>
-                  </LocalizationProvider>
-                  
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <Typography variant="h4" color="primary" sx={{ mr: 1 }}>
                       {stat.averageAttendance}
@@ -475,62 +578,13 @@ function Dashboard() {
                   <CardHeader 
                     title={`${centerChart.centerName} - Attendance Progress`}
                     avatar={<TrendingUpIcon color="primary" />}
-                    subheader={centerChart.dateRange ? `${centerChart.dateRange.fromDate.format('DD/MM/YYYY')} - ${centerChart.dateRange.toDate.format('DD/MM/YYYY')}` : 'Select date range'}
+                    subheader={
+                      filterType === 'date' 
+                        ? `${globalDateRange.fromDate.format('DD/MM/YYYY')} - ${globalDateRange.toDate.format('DD/MM/YYYY')}`
+                        : `Last ${lastNSabhas} sabhas`
+                    }
                   />
-                  <CardContent sx={{ height: '400px', display: 'flex', flexDirection: 'column' }}>
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                      <Box sx={{ 
-                        display: 'flex', 
-                        gap: 1, 
-                        mb: 2, 
-                        alignItems: 'center',
-                        flexWrap: 'wrap'
-                      }}>
-                        <DatePicker
-                          label="From"
-                          value={centerChart.dateRange?.fromDate || dayjs().subtract(1, 'month')}
-                          onChange={(newValue) => {
-                            setAttendanceChartDateRanges(prev => ({
-                              ...prev,
-                              [centerChart.centerId]: {
-                                ...prev[centerChart.centerId] || { toDate: dayjs() },
-                                fromDate: newValue || dayjs().subtract(1, 'month')
-                              }
-                            }));
-                          }}
-                          slotProps={{
-                            textField: {
-                              size: 'small',
-                              sx: { minWidth: '120px', fontSize: '0.75rem' }
-                            }
-                          }}
-                        />
-                        <Typography variant="caption" color="textSecondary">
-                          to
-                        </Typography>
-                        <DatePicker
-                          label="To"
-                          value={centerChart.dateRange?.toDate || dayjs()}
-                          onChange={(newValue) => {
-                            setAttendanceChartDateRanges(prev => ({
-                              ...prev,
-                              [centerChart.centerId]: {
-                                ...prev[centerChart.centerId] || { fromDate: dayjs().subtract(1, 'month') },
-                                toDate: newValue || dayjs()
-                              }
-                            }));
-                          }}
-                          slotProps={{
-                            textField: {
-                              size: 'small',
-                              sx: { minWidth: '120px', fontSize: '0.75rem' }
-                            }
-                          }}
-                        />
-                      </Box>
-                    </LocalizationProvider>
-                    
-                    <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CardContent sx={{ height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {centerChart.chartData ? (
                         <Box sx={{ width: '100%', height: '100%' }}>
                           <Line 
@@ -575,7 +629,6 @@ function Dashboard() {
                           No attendance data available for {centerChart.centerName}.
                         </Typography>
                       )}
-                    </Box>
                   </CardContent>
                 </Card>
               ))
