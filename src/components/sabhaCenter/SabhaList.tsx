@@ -453,6 +453,7 @@ const SabhaList = () => {
       {
         accessorKey: 'birth_date',
         header: 'Birth Date',
+        enableHiding: true,
         Cell: ({ cell }) => (
           <Typography>
             {cell.getValue<string>() ? dayjs(cell.getValue<string>()).format('DD-MM-YYYY') : '-'}
@@ -707,6 +708,11 @@ const SabhaList = () => {
                 getRowId={(row) => row.id}
                 enableSelectAll={false}
                 positionToolbarAlertBanner='none'
+                initialState={{
+                  columnVisibility: {
+                    birth_date: false,
+                  }
+                }}
                 muiTablePaperProps={{
                   elevation: 0,
                 }}
