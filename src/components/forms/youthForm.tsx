@@ -35,6 +35,8 @@ interface YouthFormData {
   birth_date: string;
   origin_city_india: string;
   current_city_germany: string;
+  address: string;
+  pin_code: string;
   is_active: boolean;
   is_karyakarta: boolean;
   karyakarta_id: number;
@@ -90,6 +92,8 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
       birth_date: dayjs().format('YYYY-MM-DD'),
       origin_city_india: "",
       current_city_germany: "",
+      address: "",
+      pin_code: "",
       is_active: true,
       is_karyakarta: false,
       karyakarta_id: 0,
@@ -128,6 +132,8 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
           birth_date: dayjs().format('YYYY-MM-DD'),
           origin_city_india: "",
           current_city_germany: "",
+          address: "",
+          pin_code: "",
           is_active: true,
           is_karyakarta: false,
           karyakarta_id: 0,
@@ -272,6 +278,45 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
                   error={!!fieldState.error}
                   helperText={fieldState.error?.message}
                   fullWidth
+                />
+              )}
+            />
+
+            <Controller
+              name="address"
+              control={control}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  label="Address"
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                  fullWidth
+                  multiline
+                  rows={2}
+                />
+              )}
+            />
+
+            <Controller
+              name="pin_code"
+              control={control}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  label="Pin Code"
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                  fullWidth
+                  inputProps={{
+                    inputMode: 'numeric',
+                    pattern: '[0-9]*',
+                    onKeyPress: (e) => {
+                      if (!/[0-9]/.test(e.key)) {
+                        e.preventDefault();
+                      }
+                    }
+                  }}
                 />
               )}
             />
