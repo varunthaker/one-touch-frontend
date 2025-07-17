@@ -147,7 +147,7 @@ const Youths = () => {
   const handleDeleteConfirm = async () => {
     if (youthToDelete) {
       try {
-        const response = await fetch(`${API_ENDPOINTS.BASE_URL}/${youthToDelete.id}?is_permanant_deletion=true`, {
+        const response = await fetch(`${API_ENDPOINTS.YOUTHS}${youthToDelete.id}?is_permanant_deletion=true`, {
           method: 'DELETE',
         });
         
