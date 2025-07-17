@@ -70,6 +70,10 @@ const Youths = () => {
         header: 'City in India',
       },
       {
+        accessorKey: 'karyakarta_name',
+        header: 'Karyakarta Name',
+      },
+      {
         id: 'actions',
         header: 'Actions',
         Cell: ({ row }) => (
