@@ -442,6 +442,20 @@ const SabhaList = () => {
         Cell: ({ row }) => (
           <Typography>
             {row.original.first_name} {row.original.last_name}
+            {row.original.origin_city_india && (
+              <span style={{ color: '#666', fontSize: '0.9em' }}>
+                {' '}({row.original.origin_city_india})
+              </span>
+            )}
+          </Typography>
+        ),
+      },
+      {
+        accessorKey: 'birth_date',
+        header: 'Birth Date',
+        Cell: ({ cell }) => (
+          <Typography>
+            {cell.getValue<string>() ? dayjs(cell.getValue<string>()).format('DD-MM-YYYY') : '-'}
           </Typography>
         ),
       },

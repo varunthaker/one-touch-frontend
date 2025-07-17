@@ -281,13 +281,26 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
               control={control}
               rules={{ required: "Current city is required" }}
               render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
-                  label="Current City (Germany)"
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                  fullWidth
-                />
+                <FormControl fullWidth error={!!fieldState.error}>
+                  <InputLabel>Current City (Germany)</InputLabel>
+                  <Select
+                    {...field}
+                    input={<OutlinedInput label="Current City (Germany)" />}
+                  >
+                    {Array.from(new Set(sabhaCenters.map(center => center.city)))
+                      .sort()
+                      .map((city) => (
+                        <MenuItem key={city} value={city}>
+                          {city}
+                        </MenuItem>
+                      ))}
+                  </Select>
+                  {fieldState.error && (
+                    <Box sx={{ color: 'error.main', fontSize: '0.75rem', mt: 0.5 }}>
+                      {fieldState.error.message}
+                    </Box>
+                  )}
+                </FormControl>
               )}
             />
 
