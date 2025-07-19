@@ -14,7 +14,8 @@ import {
   FormControlLabel,
   Switch,
   OutlinedInput,
-  Chip
+  Chip,
+  Autocomplete
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -326,26 +327,26 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
               control={control}
               rules={{ required: "Current city is required" }}
               render={({ field, fieldState }) => (
-                <FormControl fullWidth error={!!fieldState.error}>
-                  <InputLabel>Current City (Germany)</InputLabel>
-                  <Select
-                    {...field}
-                    input={<OutlinedInput label="Current City (Germany)" />}
-                  >
-                    {Array.from(new Set(sabhaCenters.map(center => center.city)))
-                      .sort()
-                      .map((city) => (
-                        <MenuItem key={city} value={city}>
-                          {city}
-                        </MenuItem>
-                      ))}
-                  </Select>
-                  {fieldState.error && (
-                    <Box sx={{ color: 'error.main', fontSize: '0.75rem', mt: 0.5 }}>
-                      {fieldState.error.message}
-                    </Box>
+                <Autocomplete
+                  freeSolo
+                  options={Array.from(new Set(sabhaCenters.map(center => center.city))).sort()}
+                  value={field.value}
+                  onChange={(event, newValue) => {
+                    field.onChange(newValue || '');
+                  }}
+                  onInputChange={(event, newInputValue) => {
+                    field.onChange(newInputValue);
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Current City (Germany)"
+                      error={!!fieldState.error}
+                      helperText={fieldState.error?.message}
+                      fullWidth
+                    />
                   )}
-                </FormControl>
+                />
               )}
             />
 
