@@ -1,7 +1,7 @@
-import { create } from 'zustand';
-import axios from 'axios';
-import useSabhaSelectorStore from './useSabhaSelectorStore';
-import { API_ENDPOINTS } from '../config/api';
+import { create } from "zustand";
+import axios from "axios";
+import useSabhaSelectorStore from "./useSabhaSelectorStore";
+import { API_ENDPOINTS } from "../config/api";
 
 interface SabhaCenter {
   city: string;
@@ -25,6 +25,7 @@ interface Youth {
   educational_field: string;
   created_at: string;
   id: number;
+  karyakarta_name: string; // Added karyakarta name
   sabha_centers: SabhaCenter[];
 }
 
@@ -41,7 +42,7 @@ const useYouthsStore = create<YouthsState>((set) => ({
   error: null,
   fetchYouths: async () => {
     const selectedCity = useSabhaSelectorStore.getState().selectedCity;
-    
+
     if (!selectedCity) {
       set({ youths: [], loading: false, error: null });
       return;
@@ -52,13 +53,13 @@ const useYouthsStore = create<YouthsState>((set) => ({
       const response = await axios.get(API_ENDPOINTS.YOUTHS_BY_SABHA_CENTER(selectedCity));
       set({ youths: response.data, loading: false });
     } catch (error) {
-      set({ 
-        error: error instanceof Error ? error.message : 'An error occurred while fetching youths',
+      set({
+        error: error instanceof Error ? error.message : "An error occurred while fetching youths",
         loading: false,
-        youths: []
+        youths: [],
       });
     }
   },
 }));
 
-export default useYouthsStore; 
+export default useYouthsStore;
