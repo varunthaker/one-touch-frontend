@@ -3,6 +3,7 @@ export const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
 // API Endpoints
 export const API_ENDPOINTS = {
+  BASE_URL: API_BASE_URL,
   // Sabha Centers
   SABHA_CENTERS: `${API_BASE_URL}/api/sabha_centers/`,
   

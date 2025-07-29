@@ -9,7 +9,11 @@ services:
       - .:/app
       - /app/node_modules
     environment:
-      - CHOKIDAR_USEPOLLING=true
+      - VITE_BACKEND_URL=${VITE_BACKEND_URL}
+      - VITE_ZITADEL_AUTHORITY=${VITE_ZITADEL_AUTHORITY}
+      - VITE_ZITADEL_CLIENT_ID=${VITE_ZITADEL_CLIENT_ID}
+      - VITE_ZITADEL_REDIRECT_URL=${VITE_ZITADEL_REDIRECT_URL}
+      - VITE_SILENT_REDIRECT_URI=${VITE_SILENT_REDIRECT_URI}
     restart: always
 
 
