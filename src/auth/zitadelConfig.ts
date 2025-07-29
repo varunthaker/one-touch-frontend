@@ -17,6 +17,8 @@ if (!redirect_uri) {
   console.error('VITE_ZITADEL_REDIRECT_URL is not defined in environment variables');
 }
 
+
+// Note: The below code is for live deployment. Uncomment and use it when deploying to production.
 const zitadelConfig: UserManagerSettings = {
   authority,
   client_id,
