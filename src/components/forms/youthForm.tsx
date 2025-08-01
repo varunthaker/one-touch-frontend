@@ -331,7 +331,7 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
                   freeSolo
                   options={Array.from(new Set(sabhaCenters.map(center => center.city))).sort()}
                   value={field.value}
-                  onChange={(event, newValue) => {
+                  onChange={(_, newValue) => {
                     field.onChange(newValue || '');
                   }}
                   onInputChange={(_, newInputValue) => {
