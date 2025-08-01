@@ -334,7 +334,7 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
                   onChange={(event, newValue) => {
                     field.onChange(newValue || '');
                   }}
-                  onInputChange={(event, newInputValue) => {
+                  onInputChange={(_, newInputValue) => {
                     field.onChange(newInputValue);
                   }}
                   renderInput={(params) => (
