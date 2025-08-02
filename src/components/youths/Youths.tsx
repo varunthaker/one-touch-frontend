@@ -12,7 +12,7 @@ import useYouthsStore from "../../store/useYouthsStore";
 import useSabhaSelectorStore from "../../store/useSabhaSelectorStore";
 import { API_ENDPOINTS } from "../../config/api";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import axiosInstance from "../../config/axios";
 
 const Youths = () => {
   const { youths, loading, error, fetchYouths } = useYouthsStore();
@@ -117,7 +117,7 @@ const Youths = () => {
       return;
     } else if (formMode === "edit" && editId) {
       try {
-        await axios.put(`${API_ENDPOINTS.YOUTHS}${editId}`, {
+        await axiosInstance.put(`${API_ENDPOINTS.YOUTHS}${editId}`, {
           ...data,
           is_active: Boolean(data.is_active),
           karyakarta_id: data.karyakarta_id || 0,
@@ -142,7 +142,7 @@ const Youths = () => {
   const handleDeleteConfirm = async () => {
     if (youthToDelete) {
       try {
-        await axios.delete(`${API_ENDPOINTS.YOUTHS}${youthToDelete.id}?is_permanant_deletion=true`);
+        await axiosInstance.delete(`${API_ENDPOINTS.YOUTHS}${youthToDelete.id}?is_permanant_deletion=true`);
         fetchYouths(); // Refresh the youths list
       } catch (error) {
         console.error('Error deleting youth:', error);

@@ -21,7 +21,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useForm, Controller } from "react-hook-form";
-import axios from "axios";
+import axiosInstance from "../../config/axios";
 import useSabhaCenterStore from "../../store/useSabhaCenterStore";
 import useYouthsStore from "../../store/useYouthsStore";
 import useSabhaSelectorStore from "../../store/useSabhaSelectorStore";
@@ -109,7 +109,7 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
     
     setLoadingKaryakartas(true);
     try {
-      const response = await axios.get(API_ENDPOINTS.YOUTHS_KARYAKARTA(selectedSabhaCenter));
+      const response = await axiosInstance.get(API_ENDPOINTS.YOUTHS_KARYAKARTA(selectedSabhaCenter));
       setKaryakartas(response.data);
     } catch (error) {
       console.error('Error fetching karyakartas:', error);
@@ -147,7 +147,7 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
 
   const defaultOnSubmit = async (data: YouthFormData) => {
     try {
-      await axios.post(API_ENDPOINTS.YOUTHS, {
+      await axiosInstance.post(API_ENDPOINTS.YOUTHS, {
         ...data,
         created_at: dayjs().toISOString(),
       });

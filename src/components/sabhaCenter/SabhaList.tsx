@@ -26,7 +26,7 @@ import { API_ENDPOINTS } from '../../config/api';
 import dayjs from 'dayjs';
 import { Link } from 'react-router-dom';
 import { YouthInfoForm } from '../forms/youthForm';
-import axios from 'axios';
+import axiosInstance from '../../config/axios';
 
 const SabhaList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -187,7 +187,7 @@ const SabhaList = () => {
     
     try {
       // Fetch present youth IDs for this sabha
-      const response = await axios.get(API_ENDPOINTS.ATTENDANCE_BY_SABHA(sabha.id));
+      const response = await axiosInstance.get(API_ENDPOINTS.ATTENDANCE_BY_SABHA(sabha.id));
       const data = response.data;
       
       // Filter youths to only show present ones
@@ -211,13 +211,13 @@ const SabhaList = () => {
     try {
       if (isEditMode && selectedSabhaForEdit) {
         // Edit existing sabha
-        await axios.put(`${API_ENDPOINTS.SABHAS}${selectedSabhaForEdit.id}`, {
+        await axiosInstance.put(`${API_ENDPOINTS.SABHAS}${selectedSabhaForEdit.id}`, {
           ...data,
           sabha_center_id: selectedSabhaCenter
         });
       } else {
         // Create new sabha
-        await axios.post(API_ENDPOINTS.SABHAS, {
+        await axiosInstance.post(API_ENDPOINTS.SABHAS, {
           ...data,
           sabha_center_id: selectedSabhaCenter
         });
@@ -248,7 +248,7 @@ const SabhaList = () => {
     
     try {
       // Fetch present youth IDs for this sabha
-      const response = await axios.get(API_ENDPOINTS.ATTENDANCE_BY_SABHA(sabha.id));
+      const response = await axiosInstance.get(API_ENDPOINTS.ATTENDANCE_BY_SABHA(sabha.id));
       const data = response.data;
       
       // Convert present_youth_ids array to rowSelection object
@@ -279,7 +279,7 @@ const SabhaList = () => {
         }))
       };
 
-      await axios.post(API_ENDPOINTS.ATTENDANCE, attendancePayload);
+      await axiosInstance.post(API_ENDPOINTS.ATTENDANCE, attendancePayload);
 
       setAttendanceDialogOpen(false);
       setSelectedSabhaForAttendance(null);
@@ -344,7 +344,7 @@ const SabhaList = () => {
     if (!selectedSabhaForDelete) return;
     
     try {
-      await axios.delete(`${API_ENDPOINTS.SABHAS}${selectedSabhaForDelete.id}`);
+      await axiosInstance.delete(`${API_ENDPOINTS.SABHAS}${selectedSabhaForDelete.id}`);
       setDeleteConfirmDialogOpen(false);
       setSelectedSabhaForDelete(null);
       fetchSabhas(); // Refresh the table
@@ -358,7 +358,7 @@ const SabhaList = () => {
   const handleYouthCreated = async (data: any) => {
     try {
       // Send the youth data to the backend
-      await axios.post(API_ENDPOINTS.YOUTHS, {
+      await axiosInstance.post(API_ENDPOINTS.YOUTHS, {
         ...data,
         created_at: dayjs().toISOString(),
       });
@@ -371,7 +371,7 @@ const SabhaList = () => {
       if (selectedSabhaForAttendance) {
         try {
           // Fetch updated attendance data for the current sabha
-          const response = await axios.get(API_ENDPOINTS.ATTENDANCE_BY_SABHA(selectedSabhaForAttendance.id));
+          const response = await axiosInstance.get(API_ENDPOINTS.ATTENDANCE_BY_SABHA(selectedSabhaForAttendance.id));
           const attendanceData = response.data;
           
           // Update row selection with the new data
