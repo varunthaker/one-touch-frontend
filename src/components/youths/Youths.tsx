@@ -12,6 +12,7 @@ import useYouthsStore from "../../store/useYouthsStore";
 import useSabhaSelectorStore from "../../store/useSabhaSelectorStore";
 import { API_ENDPOINTS } from "../../config/api";
 import { Link } from "react-router-dom";
+import axios from "axios";
 
 const Youths = () => {
   const { youths, loading, error, fetchYouths } = useYouthsStore();
@@ -116,16 +117,12 @@ const Youths = () => {
       return;
     } else if (formMode === "edit" && editId) {
       try {
-        await fetch(`${API_ENDPOINTS.YOUTHS}${editId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...data,
-            is_active: Boolean(data.is_active),
-            karyakarta_id: data.karyakarta_id || 0,
-            created_at: data.created_at || new Date().toISOString(),
-            sabha_center_ids: data.sabha_center_ids || [0],
-          }),
+        await axios.put(`${API_ENDPOINTS.YOUTHS}${editId}`, {
+          ...data,
+          is_active: Boolean(data.is_active),
+          karyakarta_id: data.karyakarta_id || 0,
+          created_at: data.created_at || new Date().toISOString(),
+          sabha_center_ids: data.sabha_center_ids || [0],
         });
         setFormDialogOpen(false);
         setEditId(null);
@@ -145,15 +142,8 @@ const Youths = () => {
   const handleDeleteConfirm = async () => {
     if (youthToDelete) {
       try {
-        const response = await fetch(`${API_ENDPOINTS.YOUTHS}${youthToDelete.id}?is_permanant_deletion=true`, {
-          method: 'DELETE',
-        });
-        
-        if (response.ok) {
-          fetchYouths(); // Refresh the youths list
-        } else {
-          console.error('Error deleting youth:', response.statusText);
-        }
+        await axios.delete(`${API_ENDPOINTS.YOUTHS}${youthToDelete.id}?is_permanant_deletion=true`);
+        fetchYouths(); // Refresh the youths list
       } catch (error) {
         console.error('Error deleting youth:', error);
       }

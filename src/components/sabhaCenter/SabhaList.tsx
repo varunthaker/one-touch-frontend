@@ -26,6 +26,7 @@ import { API_ENDPOINTS } from '../../config/api';
 import dayjs from 'dayjs';
 import { Link } from 'react-router-dom';
 import { YouthInfoForm } from '../forms/youthForm';
+import axios from 'axios';
 
 const SabhaList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -186,8 +187,8 @@ const SabhaList = () => {
     
     try {
       // Fetch present youth IDs for this sabha
-      const response = await fetch(API_ENDPOINTS.ATTENDANCE_BY_SABHA(sabha.id));
-      const data = await response.json();
+      const response = await axios.get(API_ENDPOINTS.ATTENDANCE_BY_SABHA(sabha.id));
+      const data = response.data;
       
       // Filter youths to only show present ones
       if (data.present_youth_ids && Array.isArray(data.present_youth_ids)) {
@@ -210,38 +211,16 @@ const SabhaList = () => {
     try {
       if (isEditMode && selectedSabhaForEdit) {
         // Edit existing sabha
-        const response = await fetch(`${API_ENDPOINTS.SABHAS}${selectedSabhaForEdit.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ...data,
-            sabha_center_id: selectedSabhaCenter
-          })
+        await axios.put(`${API_ENDPOINTS.SABHAS}${selectedSabhaForEdit.id}`, {
+          ...data,
+          sabha_center_id: selectedSabhaCenter
         });
-        
-        if (!response.ok) {
-          console.error('Error updating sabha:', response.statusText);
-          return;
-        }
       } else {
         // Create new sabha
-        const response = await fetch(API_ENDPOINTS.SABHAS, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ...data,
-            sabha_center_id: selectedSabhaCenter
-          })
+        await axios.post(API_ENDPOINTS.SABHAS, {
+          ...data,
+          sabha_center_id: selectedSabhaCenter
         });
-        
-        if (!response.ok) {
-          console.error('Error creating sabha:', response.statusText);
-          return;
-        }
       }
       
       setCreateSabhaDialogOpen(false);
@@ -269,8 +248,8 @@ const SabhaList = () => {
     
     try {
       // Fetch present youth IDs for this sabha
-      const response = await fetch(API_ENDPOINTS.ATTENDANCE_BY_SABHA(sabha.id));
-      const data = await response.json();
+      const response = await axios.get(API_ENDPOINTS.ATTENDANCE_BY_SABHA(sabha.id));
+      const data = response.data;
       
       // Convert present_youth_ids array to rowSelection object
       const initialRowSelection: {[key: number]: boolean} = {};
@@ -300,13 +279,7 @@ const SabhaList = () => {
         }))
       };
 
-      await fetch(API_ENDPOINTS.ATTENDANCE, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(attendancePayload)
-      });
+      await axios.post(API_ENDPOINTS.ATTENDANCE, attendancePayload);
 
       setAttendanceDialogOpen(false);
       setSelectedSabhaForAttendance(null);
@@ -371,20 +344,10 @@ const SabhaList = () => {
     if (!selectedSabhaForDelete) return;
     
     try {
-      const response = await fetch(`${API_ENDPOINTS.SABHAS}${selectedSabhaForDelete.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (response.ok) {
-        setDeleteConfirmDialogOpen(false);
-        setSelectedSabhaForDelete(null);
-        fetchSabhas(); // Refresh the table
-      } else {
-        console.error('Error deleting sabha:', response.statusText);
-      }
+      await axios.delete(`${API_ENDPOINTS.SABHAS}${selectedSabhaForDelete.id}`);
+      setDeleteConfirmDialogOpen(false);
+      setSelectedSabhaForDelete(null);
+      fetchSabhas(); // Refresh the table
     } catch (error) {
       console.error('Error deleting sabha:', error);
     }
@@ -395,15 +358,9 @@ const SabhaList = () => {
   const handleYouthCreated = async (data: any) => {
     try {
       // Send the youth data to the backend
-      await fetch(API_ENDPOINTS.YOUTHS, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...data,
-          created_at: dayjs().toISOString(),
-        })
+      await axios.post(API_ENDPOINTS.YOUTHS, {
+        ...data,
+        created_at: dayjs().toISOString(),
       });
       
       // Refresh the youths list after a new youth is created
@@ -414,8 +371,8 @@ const SabhaList = () => {
       if (selectedSabhaForAttendance) {
         try {
           // Fetch updated attendance data for the current sabha
-          const response = await fetch(API_ENDPOINTS.ATTENDANCE_BY_SABHA(selectedSabhaForAttendance.id));
-          const attendanceData = await response.json();
+          const response = await axios.get(API_ENDPOINTS.ATTENDANCE_BY_SABHA(selectedSabhaForAttendance.id));
+          const attendanceData = response.data;
           
           // Update row selection with the new data
           const updatedRowSelection: {[key: number]: boolean} = {};
