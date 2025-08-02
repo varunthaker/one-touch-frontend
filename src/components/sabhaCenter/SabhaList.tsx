@@ -88,7 +88,7 @@ const SabhaList = () => {
             >
               View
             </Button>
-            {roles?.includes('superadmin') && (
+            {roles?.includes('admin') && (
               <Button
                 variant="contained"
                 color="secondary"
@@ -124,7 +124,7 @@ const SabhaList = () => {
         header: 'Sabha ID',
         size: 20
       },
-      ...(roles?.includes('superadmin') ? [{
+      ...(roles?.includes('admin') ? [{
         id: 'actions',
         header: 'Actions',
         Cell: ({ row }: { row: any }) => (
@@ -450,7 +450,7 @@ const SabhaList = () => {
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h5">Sabha List</Typography>
-        {roles?.includes('superadmin') && (
+        {roles?.includes('admin') && (
           <Button
             variant="contained"
             startIcon={<AddIcon />}

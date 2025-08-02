@@ -117,7 +117,7 @@ const SabhaCenter = () => {
         </Tooltip>
       ),
     },
-    ...(roles?.includes('superadmin') ? [
+    ...(roles?.includes('admin') ? [
       {
         id: 'actions',
         header: 'Actions',
@@ -288,7 +288,7 @@ const SabhaCenter = () => {
           >
             Change Center
           </Button>
-          {roles?.includes('superadmin') && (
+          {roles?.includes('admin') && (
             <Button
               variant="contained"
               startIcon={<AddIcon />}
