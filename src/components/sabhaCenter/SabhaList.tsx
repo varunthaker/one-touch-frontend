@@ -88,7 +88,6 @@ const SabhaList = () => {
             >
               View
             </Button>
-            {roles?.includes('admin') && (
               <Button
                 variant="contained"
                 color="secondary"
@@ -98,7 +97,6 @@ const SabhaList = () => {
               >
                 Edit
               </Button>
-            )}
           </Box>
         ),
       },
@@ -124,7 +122,7 @@ const SabhaList = () => {
         header: 'Sabha ID',
         size: 20
       },
-      ...(roles?.includes('admin') ? [{
+      {
         id: 'actions',
         header: 'Actions',
         Cell: ({ row }: { row: any }) => (
@@ -136,16 +134,18 @@ const SabhaList = () => {
             >
               <EditIcon />
             </IconButton>
-            <IconButton
-              size="small"
-              color="error"
-              onClick={() => handleDeleteSabha(row.original)}
-            >
-              <DeleteIcon />
-            </IconButton>
+            {roles?.includes('admin') && (
+              <IconButton
+                size="small"
+                color="error"
+                onClick={() => handleDeleteSabha(row.original)}
+              >
+                <DeleteIcon />
+              </IconButton>
+            )}
           </Box>
         ),
-      }] : []),
+      },
     ],
     [youths, roles]
   );

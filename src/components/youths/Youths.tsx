@@ -13,10 +13,12 @@ import useSabhaSelectorStore from "../../store/useSabhaSelectorStore";
 import { API_ENDPOINTS } from "../../config/api";
 import { Link } from "react-router-dom";
 import axiosInstance from "../../config/axios";
+import { useAuth } from "../../auth/AuthProvider";
 
 const Youths = () => {
   const { youths, loading, error, fetchYouths } = useYouthsStore();
   const selectedCity = useSabhaSelectorStore((state) => state.selectedCity);
+  const { roles } = useAuth();
   const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [formMode, setFormMode] = useState<"add" | "edit">("add");
   const [formInitialValues, setFormInitialValues] = useState<any>(null);
@@ -78,14 +80,16 @@ const Youths = () => {
             <IconButton color="primary" onClick={() => handleEditClick(row.original)}>
               <EditIcon />
             </IconButton>
-            <IconButton color="error" onClick={() => handleDeleteClick(row.original)}>
-              <DeleteIcon />
-            </IconButton>
+            {roles?.includes('admin') && (
+              <IconButton color="error" onClick={() => handleDeleteClick(row.original)}>
+                <DeleteIcon />
+              </IconButton>
+            )}
           </Box>
         ),
       },
     ],
-    []
+    [roles]
   );
 
   const handleAddClick = () => {
