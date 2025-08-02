@@ -48,11 +48,11 @@ const Layout = () => {
 
   // Define all possible tab items
   const allTabItems = [
-    { label: "Dashboard", icon: <DashboardIcon />, component: <Dashboard />, roles: ["admin", "superadmin"] },
-    { label: "Youths", icon: <PeopleIcon />, component: <Youths />, roles: ["admin", "superadmin"] },
-    { label: "Report", icon: <AssessmentIcon />, component: <Report />, roles: ["superadmin"] },
-    { label: "Sabha & Attendance", icon: <EventIcon />, component: <SabhaList />, roles: ["admin", "superadmin"] },
-    { label: "Sabha Centers", icon: <LocationOnIcon />, component: <SabhaCenter />, roles: ["admin", "superadmin"] },
+    { label: "Dashboard", icon: <DashboardIcon />, component: <Dashboard />, roles: ["admin", "karyakarta"] },
+    { label: "Youths", icon: <PeopleIcon />, component: <Youths />, roles: ["admin", "karyakarta"] },
+    { label: "Report", icon: <AssessmentIcon />, component: <Report />, roles: ["admin"] },
+    { label: "Sabha & Attendance", icon: <EventIcon />, component: <SabhaList />, roles: ["admin", "karyakarta"] },
+    { label: "Sabha Centers", icon: <LocationOnIcon />, component: <SabhaCenter />, roles: ["admin", "karyakarta"] },
   ];
 
   // Filter tab items based on user role

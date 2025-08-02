@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import axios from "axios";
+import axiosInstance from "../config/axios";
 import useSabhaSelectorStore from "./useSabhaSelectorStore";
 import { API_ENDPOINTS } from "../config/api";
 
@@ -50,7 +50,7 @@ const useYouthsStore = create<YouthsState>((set) => ({
 
     try {
       set({ loading: true, error: null });
-      const response = await axios.get(API_ENDPOINTS.YOUTHS_BY_SABHA_CENTER(selectedCity));
+      const response = await axiosInstance.get(API_ENDPOINTS.YOUTHS_BY_SABHA_CENTER(selectedCity));
       set({ youths: response.data, loading: false });
     } catch (error) {
       set({
