@@ -142,7 +142,7 @@ const Youths = () => {
   const handleDeleteConfirm = async () => {
     if (youthToDelete) {
       try {
-        await axiosInstance.delete(`${API_ENDPOINTS.YOUTHS}${youthToDelete.id}?is_permanant_deletion=true`);
+        await axiosInstance.delete(`${API_ENDPOINTS.YOUTHS}${youthToDelete.id}`);
         fetchYouths(); // Refresh the youths list
       } catch (error) {
         console.error('Error deleting youth:', error);
