@@ -50,6 +50,7 @@ import useSabhaCenterStore from '../../store/useSabhaCenterStore';
 import useSabhaSelectorStore from '../../store/useSabhaSelectorStore';
 import { API_ENDPOINTS } from '../../config/api';
 import { useEffect, useMemo, useState, useCallback } from 'react';
+import axiosInstance from '../../config/axios';
 
 dayjs.extend(isBetween);
 dayjs.extend(weekOfYear);
@@ -118,15 +119,15 @@ function Dashboard() {
     if (!selectedSabhaCenter) return;
     setLoadingKaryakartaStats(true);
     try {
-      const karyakartaResponse = await fetch(API_ENDPOINTS.YOUTHS_KARYAKARTA(selectedSabhaCenter));
-      const karyakartas = await karyakartaResponse.json();
+      const karyakartaResponse = await axiosInstance.get(API_ENDPOINTS.YOUTHS_KARYAKARTA(selectedSabhaCenter));
+      const karyakartas = karyakartaResponse.data;
       
       // Fetch youth count for each karyakarta
       const karyakartaWithYouthCount = await Promise.all(
         karyakartas.map(async (karyakarta: any) => {
           try {
-            const youthResponse = await fetch(`${API_ENDPOINTS.YOUTHS}by-karyakarta/${karyakarta.id}`);
-            const youths = await youthResponse.json();
+            const youthResponse = await axiosInstance.get(`${API_ENDPOINTS.YOUTHS}by-karyakarta/${karyakarta.id}`);
+            const youths = youthResponse.data;
             return {
               karyakartaId: karyakarta.id,
               karyakartaName: `${karyakarta.first_name} ${karyakarta.last_name}`,
@@ -203,8 +204,8 @@ function Dashboard() {
     try {
       const statsPromises = sabhaCenters.map(async (center) => {
         // Fetch sabhas for this center
-        const sabhasResponse = await fetch(`${API_ENDPOINTS.SABHAS}?sabha_center_id=${center.id}`);
-        const sabhas = await sabhasResponse.json();
+        const sabhasResponse = await axiosInstance.get(`${API_ENDPOINTS.SABHAS}?sabha_center_id=${center.id}`);
+        const sabhas = sabhasResponse.data;
         
         // Filter sabhas based on applied filter type
         let filteredSabhas;
@@ -228,8 +229,8 @@ function Dashboard() {
         // Fetch attendance for each sabha
         const attendancePromises = sabhasInRange.map(async (sabha: any) => {
           try {
-            const attendanceResponse = await fetch(API_ENDPOINTS.ATTENDANCE_BY_SABHA(sabha.id));
-            const attendanceData = await attendanceResponse.json();
+            const attendanceResponse = await axiosInstance.get(API_ENDPOINTS.ATTENDANCE_BY_SABHA(sabha.id));
+            const attendanceData = attendanceResponse.data;
             return attendanceData.present_youth_ids?.length || 0;
           } catch (error) {
             console.error(`Error fetching attendance for sabha ${sabha.id}:`, error);
@@ -243,8 +244,8 @@ function Dashboard() {
         // Fetch total youths for this center
         let totalYouths = 0;
         try {
-          const youthsResponse = await fetch(API_ENDPOINTS.YOUTHS_BY_SABHA_CENTER(center.id));
-          const youths = await youthsResponse.json();
+          const youthsResponse = await axiosInstance.get(API_ENDPOINTS.YOUTHS_BY_SABHA_CENTER(center.id));
+          const youths = youthsResponse.data;
           totalYouths = youths.length;
         } catch (error) {
           console.error(`Error fetching youths for center ${center.id}:`, error);
@@ -267,8 +268,8 @@ function Dashboard() {
       // Prepare chart data for attendance trends for all centers
       const chartDataPromises = sabhaCenters.map(async (center) => {
         try {
-          const sabhasResponse = await fetch(`${API_ENDPOINTS.SABHAS}?sabha_center_id=${center.id}`);
-          const sabhas = await sabhasResponse.json();
+          const sabhasResponse = await axiosInstance.get(`${API_ENDPOINTS.SABHAS}?sabha_center_id=${center.id}`);
+          const sabhas = sabhasResponse.data;
           
           // Filter sabhas based on applied filter type for charts
           let filteredSabhas;
@@ -298,8 +299,8 @@ function Dashboard() {
           const attendanceData = await Promise.all(
             sortedSabhas.map(async (sabha: any) => {
               try {
-                const attendanceResponse = await fetch(API_ENDPOINTS.ATTENDANCE_BY_SABHA(sabha.id));
-                const attendanceData = await attendanceResponse.json();
+                const attendanceResponse = await axiosInstance.get(API_ENDPOINTS.ATTENDANCE_BY_SABHA(sabha.id));
+                const attendanceData = attendanceResponse.data;
                 return attendanceData.present_youth_ids?.length || 0;
               } catch (error) {
                 console.error(`Error fetching attendance for chart:`, error);

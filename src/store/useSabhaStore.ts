@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import axios from 'axios';
+import axiosInstance from '../config/axios';
 import useSabhaSelectorStore from './useSabhaSelectorStore';
 import { API_ENDPOINTS } from '../config/api';
 
@@ -32,7 +32,7 @@ const useSabhaStore = create<SabhaState>((set) => ({
 
     try {
       set({ loading: true, error: null });
-      const response = await axios.get(`${API_ENDPOINTS.SABHAS}?sabha_center_id=${selectedSabhaCenter}`);
+      const response = await axiosInstance.get(`${API_ENDPOINTS.SABHAS}?sabha_center_id=${selectedSabhaCenter}`);
       set({ sabhas: response.data, loading: false });
     } catch (error) {
       set({ 

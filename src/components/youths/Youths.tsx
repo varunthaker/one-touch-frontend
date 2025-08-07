@@ -12,10 +12,13 @@ import useYouthsStore from "../../store/useYouthsStore";
 import useSabhaSelectorStore from "../../store/useSabhaSelectorStore";
 import { API_ENDPOINTS } from "../../config/api";
 import { Link } from "react-router-dom";
+import axiosInstance from "../../config/axios";
+import { useAuth } from "../../auth/AuthProvider";
 
 const Youths = () => {
   const { youths, loading, error, fetchYouths } = useYouthsStore();
   const selectedCity = useSabhaSelectorStore((state) => state.selectedCity);
+  const { roles } = useAuth();
   const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [formMode, setFormMode] = useState<"add" | "edit">("add");
   const [formInitialValues, setFormInitialValues] = useState<any>(null);
@@ -77,14 +80,16 @@ const Youths = () => {
             <IconButton color="primary" onClick={() => handleEditClick(row.original)}>
               <EditIcon />
             </IconButton>
-            <IconButton color="error" onClick={() => handleDeleteClick(row.original)}>
-              <DeleteIcon />
-            </IconButton>
+            {roles?.includes('admin') && (
+              <IconButton color="error" onClick={() => handleDeleteClick(row.original)}>
+                <DeleteIcon />
+              </IconButton>
+            )}
           </Box>
         ),
       },
     ],
-    []
+    [roles]
   );
 
   const handleAddClick = () => {
@@ -116,16 +121,12 @@ const Youths = () => {
       return;
     } else if (formMode === "edit" && editId) {
       try {
-        await fetch(`${API_ENDPOINTS.YOUTHS}${editId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...data,
-            is_active: Boolean(data.is_active),
-            karyakarta_id: data.karyakarta_id || 0,
-            created_at: data.created_at || new Date().toISOString(),
-            sabha_center_ids: data.sabha_center_ids || [0],
-          }),
+        await axiosInstance.put(`${API_ENDPOINTS.YOUTHS}${editId}`, {
+          ...data,
+          is_active: Boolean(data.is_active),
+          karyakarta_id: data.karyakarta_id || 0,
+          created_at: data.created_at || new Date().toISOString(),
+          sabha_center_ids: data.sabha_center_ids || [0],
         });
         setFormDialogOpen(false);
         setEditId(null);
@@ -145,15 +146,8 @@ const Youths = () => {
   const handleDeleteConfirm = async () => {
     if (youthToDelete) {
       try {
-        const response = await fetch(`${API_ENDPOINTS.YOUTHS}${youthToDelete.id}?is_permanant_deletion=true`, {
-          method: 'DELETE',
-        });
-        
-        if (response.ok) {
-          fetchYouths(); // Refresh the youths list
-        } else {
-          console.error('Error deleting youth:', response.statusText);
-        }
+        await axiosInstance.delete(`${API_ENDPOINTS.YOUTHS}${youthToDelete.id}`);
+        fetchYouths(); // Refresh the youths list
       } catch (error) {
         console.error('Error deleting youth:', error);
       }

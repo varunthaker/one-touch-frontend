@@ -20,7 +20,7 @@ import AddIcon from '@mui/icons-material/Add';
 import GroupIcon from '@mui/icons-material/Group';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import axios from 'axios';
+import axiosInstance from '../../config/axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthProvider';
 import { API_ENDPOINTS } from '../../config/api';
@@ -71,7 +71,7 @@ const SabhaCenter = () => {
   const fetchYouths = async (centerId: number, centerName: string) => {
     setLoadingYouths(true);
     try {
-      const response = await axios.get(API_ENDPOINTS.YOUTHS_BY_SABHA_CENTER(centerId));
+      const response = await axiosInstance.get(API_ENDPOINTS.YOUTHS_BY_SABHA_CENTER(centerId));
       setSelectedCenterYouths(response.data);
       setSelectedCenterName(centerName);
       setYouthDialogOpen(true);
@@ -117,7 +117,7 @@ const SabhaCenter = () => {
         </Tooltip>
       ),
     },
-    ...(roles?.includes('superadmin') ? [
+    ...(roles?.includes('admin') ? [
       {
         id: 'actions',
         header: 'Actions',
@@ -172,7 +172,7 @@ const SabhaCenter = () => {
 
   const fetchSabhaCenters = async () => {
     try {
-      const response = await axios.get(API_ENDPOINTS.SABHA_CENTERS);
+      const response = await axiosInstance.get(API_ENDPOINTS.SABHA_CENTERS);
       setData(response.data);
     } catch (error) {
       console.error('Error fetching sabha centers:', error);
@@ -220,7 +220,7 @@ const SabhaCenter = () => {
   const handleFormSubmit = async () => {
     if (formMode === 'add') {
       try {
-        await axios.post(API_ENDPOINTS.SABHA_CENTERS, formData);
+        await axiosInstance.post(API_ENDPOINTS.SABHA_CENTERS, formData);
         handleFormDialogClose();
         fetchSabhaCenters();
       } catch (error) {
@@ -228,7 +228,7 @@ const SabhaCenter = () => {
       }
     } else if (formMode === 'edit' && editId != null) {
       try {
-        await axios.put(`${API_ENDPOINTS.SABHA_CENTERS}${editId}`, formData);
+        await axiosInstance.put(`${API_ENDPOINTS.SABHA_CENTERS}${editId}`, formData);
         handleFormDialogClose();
         fetchSabhaCenters();
       } catch (error) {
@@ -245,7 +245,7 @@ const SabhaCenter = () => {
   const handleDeleteConfirm = async () => {
     if (deleteId == null) return;
     try {
-      await axios.delete(`${API_ENDPOINTS.SABHA_CENTERS}${deleteId}`);
+      await axiosInstance.delete(`${API_ENDPOINTS.SABHA_CENTERS}${deleteId}`);
       setDeleteDialogOpen(false);
       setDeleteId(null);
       fetchSabhaCenters();
@@ -288,7 +288,7 @@ const SabhaCenter = () => {
           >
             Change Center
           </Button>
-          {roles?.includes('superadmin') && (
+          {roles?.includes('admin') && (
             <Button
               variant="contained"
               startIcon={<AddIcon />}

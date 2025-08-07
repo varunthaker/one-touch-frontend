@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import axios from 'axios';
+import axiosInstance from '../config/axios';
 import { API_ENDPOINTS } from '../config/api';
 
 interface SabhaCenter {
@@ -25,7 +25,7 @@ const useSabhaCenterStore = create<SabhaCenterState>((set) => ({
   fetchSabhaCenters: async () => {
     try {
       set({ loading: true, error: null });
-      const response = await axios.get(API_ENDPOINTS.SABHA_CENTERS);
+      const response = await axiosInstance.get(API_ENDPOINTS.SABHA_CENTERS);
       set({ sabhaCenters: response.data, loading: false });
     } catch (error) {
       set({ 
