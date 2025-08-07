@@ -49,9 +49,9 @@ axiosInstance.interceptors.response.use(
         const user = await userManager.getUser();
         if (user) {
           const refreshedUser = await userManager.signinSilent();
-          if (refreshedUser && refreshedUser.access_token) {
+          if (refreshedUser && refreshedUser.id_token) {
             // Update the original request with new token
-            originalRequest.headers.Authorization = `Bearer ${refreshedUser.access_token}`;
+            originalRequest.headers.Authorization = `Bearer ${refreshedUser.id_token}`;
             return axiosInstance(originalRequest);
           }
         }
