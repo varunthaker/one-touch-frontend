@@ -19,7 +19,7 @@ axiosInstance.interceptors.request.use(
       
       if (user && user.access_token) {
         // Add Authorization header with Bearer token
-        config.headers.set('Authorization', `Bearer ${user.access_token}`);
+        config.headers.set('Authorization', `Bearer ${user.id_token}`);
       }
     } catch (error) {
       console.error('Error getting user token:', error);
@@ -47,8 +47,10 @@ axiosInstance.interceptors.response.use(
       try {
         // Try to refresh the token
         const user = await userManager.getUser();
+        console.log('user:', user);
         if (user) {
           const refreshedUser = await userManager.signinSilent();
+          console.log('refreshedUser:', refreshedUser.access_token);
           if (refreshedUser && refreshedUser.access_token) {
             // Update the original request with new token
             originalRequest.headers.Authorization = `Bearer ${refreshedUser.access_token}`;
