@@ -4,7 +4,7 @@ import { userManager } from '../auth/zitadelConfig';
 // Create axios instance
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_URL,
-  timeout: 10000,
+  timeout: 120000,
   headers: {
     'Content-Type': 'application/json',
   },
