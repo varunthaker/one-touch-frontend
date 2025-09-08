@@ -1,29 +1,14 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User } from 'oidc-client-ts';
-import { userManager } from './zitadelConfig';
-import { useNavigate } from 'react-router-dom';
-
-// Helper function to extract roles from user profile
-const extractRoles = (user: User): string[] => {
-  try {
-    if (user.profile && user.profile['urn:zitadel:iam:org:project:roles']) {
-      const rolesClaim = user.profile['urn:zitadel:iam:org:project:roles'];
-      return Object.keys(rolesClaim);
-    }
-    return [];
-  } catch (error) {
-    console.error('Error extracting roles:', error);
-    return [];
-  }
-};
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Auth0Provider, useAuth0 } from '@auth0/auth0-react';
+import { setTokenGetter } from '../config/axios';
 
 interface AuthContextType {
-  user: User | null;
-  isLoading: boolean;
-  login: () => Promise<void>;
-  logout: () => Promise<void>;
   isAuthenticated: boolean;
+  isLoading: boolean;
+  user: any;
   roles: string[];
+  login: () => void;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,107 +21,88 @@ export const useAuth = () => {
   return context;
 };
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
+const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, isLoading, user, loginWithRedirect, logout: auth0Logout, getAccessTokenSilently } = useAuth0();
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
+  const [roles, setRoles] = useState<string[]>([]);
 
   useEffect(() => {
-    const handleUserLoaded = (user: User) => {
-      setUser(user);
-      setIsLoading(false);
-    };
+    // For now, let's set a default admin role for testing
+    setRoles(['admin']);
+  }, []);
 
-    const handleUserUnloaded = () => {
-      setUser(null);
-      setIsLoading(false);
-    };
-
-    const handleSilentRenewError = (error: Error) => {
-      console.error('Silent renew error:', error);
-      setUser(null);
-      setIsLoading(false);
-    };
-
-    const handleAccessTokenExpired = () => {
-      console.log('Access token expired');
-      setUser(null);
-      setIsLoading(false);
-    };
-
-    userManager.events.addUserLoaded(handleUserLoaded);
-    userManager.events.addUserUnloaded(handleUserUnloaded);
-    userManager.events.addSilentRenewError(handleSilentRenewError);
-    userManager.events.addAccessTokenExpired(handleAccessTokenExpired);
-
-    // Check if this is a redirect from authentication
-    const checkAuthResponse = async () => {
+  // Set up the token getter for axios
+  useEffect(() => {
+    const tokenGetter = async () => {
       try {
-        // Check if there's a response in the URL (authentication callback)
-        const user = await userManager.signinRedirectCallback();
-        if (user) {
-          setUser(user);
-          setIsLoading(false);
-          // Redirect to sabhacenterselector after successful login
-          navigate('/sabhacenterselector', { replace: true });
-          return;
-        }
+        return await getAccessTokenSilently();
       } catch (error) {
-        // No response in URL, continue with normal flow
-        console.log('No authentication response in URL');
+        console.error('Error getting access token:', error);
+        return null;
       }
-
-      // Check if user is already signed in
-      try {
-        const user = await userManager.getUser();
-        if (user && !user.expired) {
-          setUser(user);
-        }
-      } catch (error) {
-        console.error('Error getting user:', error);
-      }
-      
-      setIsLoading(false);
     };
+    
+    setTokenGetter(tokenGetter);
+  }, [getAccessTokenSilently]);
 
-    checkAuthResponse();
-
-    return () => {
-      userManager.events.removeUserLoaded(handleUserLoaded);
-      userManager.events.removeUserUnloaded(handleUserUnloaded);
-      userManager.events.removeSilentRenewError(handleSilentRenewError);
-      userManager.events.removeAccessTokenExpired(handleAccessTokenExpired);
-    };
-  }, [navigate]);
-
-  const login = async () => {
-    try {
-      await userManager.signinRedirect();
-    } catch (error) {
-      console.error('Login error:', error);
-    }
+  const login = () => {
+    console.log('Attempting login...');
+    loginWithRedirect();
   };
 
-  const logout = async () => {
-    try {
-      await userManager.signoutRedirect();
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
+  const logout = () => {
+    auth0Logout({
+      returnTo: window.location.origin,
+    });
   };
 
   const value: AuthContextType = {
-    user,
+    isAuthenticated,
     isLoading,
+    user,
+    roles,
     login,
     logout,
-    isAuthenticated: !!user && !user.expired,
-    roles: user ? extractRoles(user) : [],
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+interface AuthProviderProps {
+  children: React.ReactNode;
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const domain = import.meta.env.VITE_AUTH0_DOMAIN;
+  const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID;
+  const redirectUri = 'http://localhost:5173/'; // Temporary hardcode for testing
+
+  console.log('=== AUTH0 DEBUG INFO ===');
+  console.log('Domain:', domain);
+  console.log('Client ID:', clientId);
+  console.log('Redirect URI:', redirectUri);
+  console.log('Current URL:', window.location.href);
+  console.log('Origin:', window.location.origin);
+  console.log('Port:', window.location.port);
+  console.log('Protocol:', window.location.protocol);
+  console.log('Hostname:', window.location.hostname);
+  console.log('Redirect URI from env:', import.meta.env.VITE_AUTH0_REDIRECT_URL);
+  
+  console.log('========================');
+
+  if (!domain || !clientId) {
+    throw new Error('Missing Auth0 configuration. Please check your environment variables.');
+  }
+
+  return (
+    <Auth0Provider
+      domain={domain}
+      clientId={clientId}
+      authorizationParams={{
+        redirect_uri: redirectUri,
+      }}
+    >
+      <AuthContextProvider>{children}</AuthContextProvider>
+    </Auth0Provider>
+  );
 }; 

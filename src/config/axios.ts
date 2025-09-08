@@ -1,5 +1,4 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
-import { userManager } from '../auth/zitadelConfig';
 
 // Create axios instance
 const axiosInstance: AxiosInstance = axios.create({
@@ -10,16 +9,24 @@ const axiosInstance: AxiosInstance = axios.create({
   },
 });
 
+// Token getter function - this will be set by the auth context
+let tokenGetter: (() => Promise<string | null>) | null = null;
+
+export const setTokenGetter = (getter: () => Promise<string | null>) => {
+  tokenGetter = getter;
+};
+
 // Request interceptor to add token
 axiosInstance.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     try {
-      // Get current user from userManager
-      const user = await userManager.getUser();
-      
-      if (user && user.access_token) {
-        // Add Authorization header with Bearer token
-        config.headers.set('Authorization', `Bearer ${user.id_token}`);
+      if (tokenGetter) {
+        const token = await tokenGetter();
+        
+        if (token) {
+          // Add Authorization header with Bearer token
+          config.headers.set('Authorization', `Bearer ${token}`);
+        }
       }
     } catch (error) {
       console.error('Error getting user token:', error);
@@ -45,20 +52,20 @@ axiosInstance.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        // Try to refresh the token
-        const user = await userManager.getUser();
-        if (user) {
-          const refreshedUser = await userManager.signinSilent();
-          if (refreshedUser && refreshedUser.id_token) {
+        if (tokenGetter) {
+          // Try to refresh the token using Auth0
+          const refreshedToken = await tokenGetter();
+          
+          if (refreshedToken) {
             // Update the original request with new token
-            originalRequest.headers.Authorization = `Bearer ${refreshedUser.id_token}`;
+            originalRequest.headers.Authorization = `Bearer ${refreshedToken}`;
             return axiosInstance(originalRequest);
           }
         }
       } catch (refreshError) {
         console.error('Token refresh failed:', refreshError);
         // Redirect to login if refresh fails
-        await userManager.signinRedirect();
+        window.location.href = '/';
         return Promise.reject(refreshError);
       }
     }
