@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Auth0Provider, useAuth0 } from '@auth0/auth0-react';
 import { setTokenGetter } from '../config/axios';
+import { useAuth as useClerkAuth, useUser } from '@clerk/clerk-react';
+
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -22,7 +23,8 @@ export const useAuth = () => {
 };
 
 const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, isLoading, user, loginWithRedirect, logout: auth0Logout, getAccessTokenSilently } = useAuth0();
+  const { isSignedIn, isLoaded, user } = useUser();
+  const { signOut, getToken } = useClerkAuth();
 
   const [roles, setRoles] = useState<string[]>([]);
 
@@ -35,7 +37,10 @@ const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const tokenGetter = async () => {
       try {
-        return await getAccessTokenSilently();
+        if (isSignedIn) {
+          return await getToken();
+        }
+        return null;
       } catch (error) {
         console.error('Error getting access token:', error);
         return null;
@@ -43,22 +48,25 @@ const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     
     setTokenGetter(tokenGetter);
-  }, [getAccessTokenSilently]);
+  }, [getToken, isSignedIn]);
 
   const login = () => {
     console.log('Attempting login...');
-    loginWithRedirect();
+    // Clerk handles login automatically through ClerkProvider
+    window.location.href = '/sign-in';
   };
 
-  const logout = () => {
-    auth0Logout({
-      returnTo: window.location.origin,
-    });
+  const logout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
   };
 
   const value: AuthContextType = {
-    isAuthenticated,
-    isLoading,
+    isAuthenticated: !!isSignedIn,
+    isLoading: !isLoaded,
     user,
     roles,
     login,
@@ -73,36 +81,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const domain = import.meta.env.VITE_AUTH0_DOMAIN;
-  const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID;
-  const redirectUri = 'http://localhost:5173/'; // Temporary hardcode for testing
-
-  console.log('=== AUTH0 DEBUG INFO ===');
-  console.log('Domain:', domain);
-  console.log('Client ID:', clientId);
-  console.log('Redirect URI:', redirectUri);
-  console.log('Current URL:', window.location.href);
-  console.log('Origin:', window.location.origin);
-  console.log('Port:', window.location.port);
-  console.log('Protocol:', window.location.protocol);
-  console.log('Hostname:', window.location.hostname);
-  console.log('Redirect URI from env:', import.meta.env.VITE_AUTH0_REDIRECT_URL);
-  
-  console.log('========================');
-
-  if (!domain || !clientId) {
-    throw new Error('Missing Auth0 configuration. Please check your environment variables.');
-  }
-
   return (
-    <Auth0Provider
-      domain={domain}
-      clientId={clientId}
-      authorizationParams={{
-        redirect_uri: redirectUri,
-      }}
-    >
-      <AuthContextProvider>{children}</AuthContextProvider>
-    </Auth0Provider>
+    <AuthContextProvider>{children}</AuthContextProvider>
   );
 }; 
