@@ -64,7 +64,7 @@ const SabhaList = () => {
   const { sabhas, loading: sabhasLoading, error: sabhasError, fetchSabhas } = useSabhaStore();
   const { youths, loading: youthsLoading, fetchYouths } = useYouthsStore();
   const selectedSabhaCenter = useSabhaSelectorStore(state => state.selectedCity);
-  const { roles } = useAuth();
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
     if (selectedSabhaCenter) {
@@ -134,7 +134,7 @@ const SabhaList = () => {
             >
               <EditIcon />
             </IconButton>
-            {roles?.includes('admin') && (
+            {isAdmin() && (
               <IconButton
                 size="small"
                 color="error"
@@ -147,7 +147,7 @@ const SabhaList = () => {
         ),
       },
     ],
-    [youths, roles]
+    [youths, isAdmin]
   );
 
   const youthColumns = useMemo<MRT_ColumnDef<any>[]>(
@@ -450,7 +450,7 @@ const SabhaList = () => {
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h5">Sabha List</Typography>
-        {roles?.includes('admin') && (
+        {isAdmin() && (
           <Button
             variant="contained"
             startIcon={<AddIcon />}

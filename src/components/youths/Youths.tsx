@@ -18,7 +18,7 @@ import { useAuth } from "../../auth/AuthProvider";
 const Youths = () => {
   const { youths, loading, error, fetchYouths } = useYouthsStore();
   const selectedCity = useSabhaSelectorStore((state) => state.selectedCity);
-  const { roles } = useAuth();
+  const { isAdmin } = useAuth();
   const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [formMode, setFormMode] = useState<"add" | "edit">("add");
   const [formInitialValues, setFormInitialValues] = useState<any>(null);
@@ -80,7 +80,7 @@ const Youths = () => {
             <IconButton color="primary" onClick={() => handleEditClick(row.original)}>
               <EditIcon />
             </IconButton>
-            {roles?.includes('admin') && (
+            {isAdmin() && (
               <IconButton color="error" onClick={() => handleDeleteClick(row.original)}>
                 <DeleteIcon />
               </IconButton>
@@ -89,7 +89,7 @@ const Youths = () => {
         ),
       },
     ],
-    [roles]
+    [isAdmin]
   );
 
   const handleAddClick = () => {

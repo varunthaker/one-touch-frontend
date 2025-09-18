@@ -10,6 +10,10 @@ interface AuthContextType {
   roles: string[];
   login: () => void;
   logout: () => void;
+  hasRole: (role: string) => boolean;
+  hasAnyRole: (roles: string[]) => boolean;
+  isAdmin: () => boolean;
+  isKaryakarta: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,9 +33,44 @@ const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [roles, setRoles] = useState<string[]>([]);
 
   useEffect(() => {
-    // For now, let's set a default admin role for testing
-    setRoles(['admin']);
-  }, []);
+    const getUserRoles = async () => {
+      if (isSignedIn && user) {
+        try {
+          // Method 1: Get roles from public metadata
+          const publicMetadata = user.publicMetadata as any;
+          // Handle both 'role' (singular) and 'roles' (plural) formats
+          const rolesFromMetadata = publicMetadata?.roles || (publicMetadata?.role ? [publicMetadata.role] : []);
+
+          // Method 2: Get roles from organization membership (if using organizations)
+          let organizationRoles: string[] = [];
+          if (user.organizationMemberships && user.organizationMemberships.length > 0) {
+            organizationRoles = user.organizationMemberships
+              .map(membership => membership.role)
+              .filter(role => role !== null) as string[];
+          }
+          
+          // Combine roles from both sources, prioritizing metadata
+          const allRoles = [...rolesFromMetadata, ...organizationRoles];
+          
+          // Remove duplicates and filter for valid roles
+          const validRoles = ['admin', 'karyakarta'];
+          const filteredRoles = [...new Set(allRoles)].filter(role => 
+            validRoles.includes(role)
+          );
+          
+          setRoles(filteredRoles);
+        } catch (error) {
+          console.error('Error getting user roles:', error);
+          // Fallback to empty roles if there's an error
+          setRoles([]);
+        }
+      } else {
+        setRoles([]);
+      }
+    };
+
+    getUserRoles();
+  }, [isSignedIn, user]);
 
   // Set up the token getter for axios
   useEffect(() => {
@@ -64,6 +103,23 @@ const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Helper functions for role checking
+  const hasRole = (role: string): boolean => {
+    return roles.includes(role);
+  };
+
+  const hasAnyRole = (requiredRoles: string[]): boolean => {
+    return requiredRoles.some(role => roles.includes(role));
+  };
+
+  const isAdmin = (): boolean => {
+    return hasRole('admin');
+  };
+
+  const isKaryakarta = (): boolean => {
+    return hasRole('karyakarta');
+  };
+
   const value: AuthContextType = {
     isAuthenticated: !!isSignedIn,
     isLoading: !isLoaded,
@@ -71,6 +127,10 @@ const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ children
     roles,
     login,
     logout,
+    hasRole,
+    hasAnyRole,
+    isAdmin,
+    isKaryakarta,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

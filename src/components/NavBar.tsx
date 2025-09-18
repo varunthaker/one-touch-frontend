@@ -43,7 +43,7 @@ const Layout = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const selectedSabhaCenterName = useSabhaSelectorStore((state) => state.selectedSabhaCenterName);
   const { isDarkMode, toggleTheme } = useThemeStore();
-  const { user, logout, roles } = useAuth();
+  const { user, logout, hasAnyRole } = useAuth();
   const themeStore = useThemeStore(); // Import and initialize theme store
 
   // Define all possible tab items
@@ -57,12 +57,12 @@ const Layout = () => {
 
   // Filter tab items based on user role
   const tabItems = allTabItems.filter((item) => {
-    if (!user || !roles) {
-      console.log("No user or roles found");
+    if (!user) {
+      console.log("No user found");
       return false;
     }
 
-    return item.roles.some((role) => roles.includes(role));
+    return hasAnyRole(item.roles);
   });
 
   const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
