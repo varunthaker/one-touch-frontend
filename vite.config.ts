@@ -10,13 +10,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           // Separate vendor chunks
-          'mui': [
-            '@mui/material',
-            '@mui/icons-material',
-            '@mui/x-date-pickers',
-            '@mui/x-charts',
-          ],
-          'emotion': ['@emotion/react', '@emotion/styled'],
+          'mui': ['@mui/material', '@mui/icons-material', '@mui/x-date-pickers', '@mui/x-charts', '@emotion/react', '@emotion/styled'],
           'clerk': ['@clerk/clerk-react'],
           'charts': ['chart.js', 'react-chartjs-2'],
           'form': ['react-hook-form', 'react-phone-number-input'],
