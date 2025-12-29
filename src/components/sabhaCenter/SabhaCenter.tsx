@@ -67,7 +67,7 @@ const SabhaCenter = () => {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const navigate = useNavigate();
-  const { roles } = useAuth();
+  const { isAdmin } = useAuth();
   const fetchYouths = async (centerId: number, centerName: string) => {
     setLoadingYouths(true);
     try {
@@ -117,7 +117,7 @@ const SabhaCenter = () => {
         </Tooltip>
       ),
     },
-    ...(roles?.includes('admin') ? [
+    ...(isAdmin() ? [
       {
         id: 'actions',
         header: 'Actions',
@@ -288,7 +288,7 @@ const SabhaCenter = () => {
           >
             Change Center
           </Button>
-          {roles?.includes('admin') && (
+          {isAdmin() && (
             <Button
               variant="contained"
               startIcon={<AddIcon />}
