@@ -1,13 +1,19 @@
 import "./css/App.css";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import Layout from "./components/layout/Layout";
-import SabhaSelector from "./components/sabhaCenter/SabhaSelector";
+import { lazy, Suspense } from "react";
 import { ThemeProvider, createTheme } from "@mui/material";
 import CssBaseline from "@mui/material/CssBaseline";
 import useThemeStore from "./store/useThemeStore";
 import { AuthProvider } from "./auth/AuthProvider";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { ClerkProvider, SignIn } from "@clerk/clerk-react";
+
+// Lazy load route components for code splitting
+const Layout = lazy(() => import("./components/layout/Layout"));
+const SabhaSelector = lazy(() => import("./components/sabhaCenter/SabhaSelector"));
+
+// Loading fallback component
+const LoadingFallback = () => <div style={{ padding: "20px", textAlign: "center" }}>Loading...</div>;
 
 function App() {
   const isDarkMode = useThemeStore((state) => state.isDarkMode);
@@ -49,36 +55,38 @@ function App() {
         <CssBaseline />
         <Router>
           <AuthProvider>
-            <Routes>
-              <Route 
-                path="/sign-in" 
-                element={<SignIn />}
-              />
-              <Route 
-                path="/" 
-                element={
-                  <ProtectedRoute>
-                    <SabhaSelector />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/layout" 
-                element={
-                  <ProtectedRoute>
-                    <Layout />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/sabhacenterselector" 
-                element={
-                  <ProtectedRoute>
-                    <SabhaSelector />
-                  </ProtectedRoute>
-                } 
-              />
-            </Routes>
+            <Suspense fallback={<LoadingFallback />}>
+              <Routes>
+                <Route 
+                  path="/sign-in" 
+                  element={<SignIn />}
+                />
+                <Route 
+                  path="/" 
+                  element={
+                    <ProtectedRoute>
+                      <SabhaSelector />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/layout" 
+                  element={
+                    <ProtectedRoute>
+                      <Layout />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/sabhacenterselector" 
+                  element={
+                    <ProtectedRoute>
+                      <SabhaSelector />
+                    </ProtectedRoute>
+                  } 
+                />
+              </Routes>
+            </Suspense>
           </AuthProvider>
         </Router>
       </ThemeProvider>
