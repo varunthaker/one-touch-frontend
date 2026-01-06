@@ -67,6 +67,16 @@ ChartJS.register(
   Legend
 );
 
+function DashboardNew() {
+  return (
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h5" gutterBottom>
+        Dashboard
+      </Typography>
+    </Box>
+  );
+}
+
 function Dashboard() {
   const { youths, loading, error, fetchYouths } = useYouthsStore();
   const { sabhaCenters, fetchSabhaCenters } = useSabhaCenterStore();
@@ -888,4 +898,4 @@ function Dashboard() {
   );
 }
 
-export default Dashboard;
+export default DashboardNew;
