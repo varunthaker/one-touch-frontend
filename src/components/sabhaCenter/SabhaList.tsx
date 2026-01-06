@@ -559,6 +559,7 @@ const SabhaList = () => {
                       onChange={(newValue) => {
                         field.onChange(newValue ? newValue.format('YYYY-MM-DD') : '');
                       }}
+                      format="DD/MM/YYYY"
                       slotProps={{
                         textField: {
                           fullWidth: true,
