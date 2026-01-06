@@ -248,24 +248,35 @@ export function YouthInfoForm({ visible, onClose, initialValues, onSubmit, dialo
               name="birth_date"
               control={control}
               rules={{ required: "Birth date is required" }}
-              render={({ field }) => (
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <DatePicker
-                    label="Birth Date"
-                    value={dayjs(field.value)}
-                    onChange={(newValue) => {
-                      field.onChange(newValue ? dayjs(newValue).format('YYYY-MM-DD') : '');
-                    }}
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        error: !field.value,
-                        helperText: !field.value ? "Birth date is required" : ""
-                      }
-                    }}
-                  />
-                </LocalizationProvider>
-              )}
+              render={({ field, fieldState }) => {
+                const dateValue = field.value ? dayjs(field.value, 'YYYY-MM-DD') : null;
+                const isValidDate = dateValue && dateValue.isValid();
+                
+                return (
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      label="Birth Date"
+                      value={isValidDate ? dateValue : null}
+                      onChange={(newValue) => {
+                        if (newValue && dayjs(newValue).isValid()) {
+                          field.onChange(dayjs(newValue).format('YYYY-MM-DD'));
+                        } else {
+                          field.onChange('');
+                        }
+                      }}
+                      format="DD/MM/YYYY"
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          error: !!fieldState.error || (!field.value && fieldState.isTouched),
+                          helperText: fieldState.error?.message || (!field.value && fieldState.isTouched ? "Birth date is required" : ""),
+                          placeholder: "DD/MM/YYYY"
+                        }
+                      }}
+                    />
+                  </LocalizationProvider>
+                );
+              }}
             />
 
             <Controller
