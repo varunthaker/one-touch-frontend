@@ -69,10 +69,6 @@ const Youths = () => {
         header: "Karyakarta Name",
       },
       {
-        accessorKey: 'karyakarta_name',
-        header: 'Karyakarta Name',
-      },
-      {
         id: "actions",
         header: "Actions",
         Cell: ({ row }) => (
