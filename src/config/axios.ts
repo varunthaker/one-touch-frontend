@@ -53,7 +53,7 @@ axiosInstance.interceptors.response.use(
 
       try {
         if (tokenGetter) {
-          // Try to refresh the token using Clerk
+          // Try to refresh the token
           const refreshedToken = await tokenGetter();
           
           if (refreshedToken) {
