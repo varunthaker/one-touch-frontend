@@ -11,7 +11,7 @@ export default defineConfig({
         manualChunks: {
           // Separate vendor chunks
           'mui': ['@mui/material', '@mui/icons-material', '@mui/x-date-pickers', '@mui/x-charts', '@emotion/react', '@emotion/styled'],
-          'clerk': ['@clerk/clerk-react'],
+          'supabase': ['@supabase/supabase-js'],
           'charts': ['chart.js', 'react-chartjs-2'],
           'form': ['react-hook-form', 'react-phone-number-input'],
           'table': ['material-react-table', 'antd'],

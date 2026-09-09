@@ -1,13 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import type { Session, User } from '@supabase/supabase-js';
 import { setTokenGetter } from '../config/axios';
-import { useAuth as useClerkAuth, useUser } from '@clerk/clerk-react';
-
+import { supabase } from '../config/supabaseClient';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
-  user: any;
+  user: User | null;
   roles: string[];
+  mustChangePassword: boolean;
   login: () => void;
   logout: () => void;
   hasRole: (role: string) => boolean;
@@ -26,82 +27,57 @@ export const useAuth = () => {
   return context;
 };
 
-const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isSignedIn, isLoaded, user } = useUser();
-  const { signOut, getToken } = useClerkAuth();
+const rolesFromUser = (user: User | null): string[] => {
+  if (!user) return [];
+  const appMetadata = user.app_metadata as { role?: string; roles?: string[] } | undefined;
+  const rawRoles = appMetadata?.roles || (appMetadata?.role ? [appMetadata.role] : []);
+  const validRoles = ['admin', 'karyakarta'];
+  return [...new Set(rawRoles)].filter((role) => validRoles.includes(role));
+};
 
-  const [roles, setRoles] = useState<string[]>([]);
+const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const getUserRoles = async () => {
-      if (isSignedIn && user) {
-        try {
-          // Method 1: Get roles from public metadata
-          const publicMetadata = user.publicMetadata as any;
-          // Handle both 'role' (singular) and 'roles' (plural) formats
-          const rolesFromMetadata = publicMetadata?.roles || (publicMetadata?.role ? [publicMetadata.role] : []);
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setIsLoading(false);
+    });
 
-          // Method 2: Get roles from organization membership (if using organizations)
-          let organizationRoles: string[] = [];
-          if (user.organizationMemberships && user.organizationMemberships.length > 0) {
-            organizationRoles = user.organizationMemberships
-              .map(membership => membership.role)
-              .filter(role => role !== null) as string[];
-          }
-          
-          // Combine roles from both sources, prioritizing metadata
-          const allRoles = [...rolesFromMetadata, ...organizationRoles];
-          
-          // Remove duplicates and filter for valid roles
-          const validRoles = ['admin', 'karyakarta'];
-          const filteredRoles = [...new Set(allRoles)].filter(role => 
-            validRoles.includes(role)
-          );
-          
-          setRoles(filteredRoles);
-        } catch (error) {
-          console.error('Error getting user roles:', error);
-          // Fallback to empty roles if there's an error
-          setRoles([]);
-        }
-      } else {
-        setRoles([]);
-      }
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+    });
+
+    return () => {
+      listener.subscription.unsubscribe();
     };
-
-    getUserRoles();
-  }, [isSignedIn, user]);
+  }, []);
 
   // Set up the token getter for axios
   useEffect(() => {
     const tokenGetter = async () => {
-      try {
-        if (isSignedIn) {
-          return await getToken();
-        }
-        return null;
-      } catch (error) {
-        console.error('Error getting access token:', error);
-        return null;
-      }
+      const { data } = await supabase.auth.getSession();
+      return data.session?.access_token ?? null;
     };
-    
+
     setTokenGetter(tokenGetter);
-  }, [getToken, isSignedIn]);
+  }, []);
 
   const login = () => {
-    console.log('Attempting login...');
-    // Clerk handles login automatically through ClerkProvider
     window.location.href = '/sign-in';
   };
 
   const logout = async () => {
     try {
-      await signOut();
+      await supabase.auth.signOut();
     } catch (error) {
       console.error('Error during logout:', error);
     }
   };
+
+  const roles = rolesFromUser(session?.user ?? null);
+  const mustChangePassword = session?.user?.user_metadata?.must_change_password === true;
 
   // Helper functions for role checking
   const hasRole = (role: string): boolean => {
@@ -121,10 +97,11 @@ const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const value: AuthContextType = {
-    isAuthenticated: !!isSignedIn,
-    isLoading: !isLoaded,
-    user,
+    isAuthenticated: !!session,
+    isLoading,
+    user: session?.user ?? null,
     roles,
+    mustChangePassword,
     login,
     logout,
     hasRole,
@@ -144,4 +121,4 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   return (
     <AuthContextProvider>{children}</AuthContextProvider>
   );
-}; 
+};

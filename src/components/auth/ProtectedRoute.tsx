@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthProvider';
 import { Box, CircularProgress } from '@mui/material';
 
@@ -7,32 +8,30 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, isLoading, login } = useAuth();
+  const { isAuthenticated, isLoading, login, mustChangePassword } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // If not loading and not authenticated, trigger Zitadel login
-    if (!isLoading && !isAuthenticated) {
+    if (isLoading) return;
+
+    if (!isAuthenticated) {
+      // If not loading and not authenticated, redirect to sign-in
       login();
+      return;
     }
-  }, [isAuthenticated, isLoading, login]);
 
-  if (isLoading) {
-    return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '100vh',
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
+    if (mustChangePassword && location.pathname !== '/change-password') {
+      navigate('/change-password', { replace: true });
+    }
+  }, [isAuthenticated, isLoading, mustChangePassword, location.pathname, login, navigate]);
 
-  // If not authenticated, show loading while redirecting to Zitadel
-  if (!isAuthenticated) {
+  const showLoader =
+    isLoading ||
+    !isAuthenticated ||
+    (mustChangePassword && location.pathname !== '/change-password');
+
+  if (showLoader) {
     return (
       <Box
         sx={{
@@ -50,4 +49,4 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   return <>{children}</>;
 };
 
-export default ProtectedRoute; 
+export default ProtectedRoute;

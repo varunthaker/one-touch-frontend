@@ -6,7 +6,8 @@ import CssBaseline from "@mui/material/CssBaseline";
 import useThemeStore from "./store/useThemeStore";
 import { AuthProvider } from "./auth/AuthProvider";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
-import { ClerkProvider, SignIn } from "@clerk/clerk-react";
+import SignIn from "./components/auth/SignIn";
+import ChangePassword from "./components/auth/ChangePassword";
 
 // Lazy load route components for code splitting
 const Layout = lazy(() => import("./components/layout/Layout"));
@@ -42,55 +43,54 @@ function App() {
     },
   });
 
-  // Get Clerk publishable key from environment variables
-  const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-
-  if (!clerkPubKey) {
-    throw new Error("Missing Clerk Publishable Key");
-  }
-
   return (
-    <ClerkProvider publishableKey={clerkPubKey}>
-      <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
-        <CssBaseline />
-        <Router>
-          <AuthProvider>
-            <Suspense fallback={<LoadingFallback />}>
-              <Routes>
-                <Route 
-                  path="/sign-in" 
-                  element={<SignIn />}
-                />
-                <Route 
-                  path="/" 
-                  element={
-                    <ProtectedRoute>
-                      <SabhaSelector />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/layout" 
-                  element={
-                    <ProtectedRoute>
-                      <Layout />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/sabhacenterselector" 
-                  element={
-                    <ProtectedRoute>
-                      <SabhaSelector />
-                    </ProtectedRoute>
-                  } 
-                />
-              </Routes>
-            </Suspense>
-          </AuthProvider>
-        </Router>
-      </ThemeProvider>
-    </ClerkProvider>
+    <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
+      <CssBaseline />
+      <Router>
+        <AuthProvider>
+          <Suspense fallback={<LoadingFallback />}>
+            <Routes>
+              <Route
+                path="/sign-in"
+                element={<SignIn />}
+              />
+              <Route
+                path="/change-password"
+                element={
+                  <ProtectedRoute>
+                    <ChangePassword />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <SabhaSelector />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/layout"
+                element={
+                  <ProtectedRoute>
+                    <Layout />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/sabhacenterselector"
+                element={
+                  <ProtectedRoute>
+                    <SabhaSelector />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </Suspense>
+        </AuthProvider>
+      </Router>
+    </ThemeProvider>
   );
 }
 
