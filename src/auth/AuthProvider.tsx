@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Session, User } from '@supabase/supabase-js';
 import { setTokenGetter } from '../config/axios';
 import { supabase } from '../config/supabaseClient';
@@ -38,6 +39,7 @@ const rolesFromUser = (user: User | null): string[] => {
 const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -45,14 +47,22 @@ const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession);
+
+      // Safety net: if Supabase's redirect_to wasn't honored (e.g. not on the
+      // Redirect URLs allowlist), it falls back to the Site URL and we'd land
+      // wherever that is instead of the reset-password page. Catch the
+      // PASSWORD_RECOVERY event here regardless of which page we landed on.
+      if (event === 'PASSWORD_RECOVERY' && window.location.pathname !== '/reset-password') {
+        navigate('/reset-password', { replace: true });
+      }
     });
 
     return () => {
       listener.subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   // Set up the token getter for axios
   useEffect(() => {
