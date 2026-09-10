@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Box, Button, Paper, TextField, Typography, Alert, CircularProgress } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
+import { Box, Button, Paper, TextField, Typography, Alert, CircularProgress, Link } from '@mui/material';
 import { supabase } from '../../config/supabaseClient';
 import oneTouchLogo from '../assets/OneTouchIcon.svg';
 
@@ -68,6 +69,12 @@ const SignIn: React.FC = () => {
           <Button type="submit" variant="contained" disabled={isSubmitting} fullWidth>
             {isSubmitting ? <CircularProgress size={24} /> : 'Sign In'}
           </Button>
+        </Box>
+
+        <Box sx={{ mt: 2, textAlign: 'center' }}>
+          <Link component={RouterLink} to="/forgot-password" variant="body2">
+            Forgot password?
+          </Link>
         </Box>
       </Paper>
     </Box>

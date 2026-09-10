@@ -8,6 +8,8 @@ import { AuthProvider } from "./auth/AuthProvider";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import SignIn from "./components/auth/SignIn";
 import ChangePassword from "./components/auth/ChangePassword";
+import ForgotPassword from "./components/auth/ForgotPassword";
+import ResetPassword from "./components/auth/ResetPassword";
 
 // Lazy load route components for code splitting
 const Layout = lazy(() => import("./components/layout/Layout"));
@@ -53,6 +55,14 @@ function App() {
               <Route
                 path="/sign-in"
                 element={<SignIn />}
+              />
+              <Route
+                path="/forgot-password"
+                element={<ForgotPassword />}
+              />
+              <Route
+                path="/reset-password"
+                element={<ResetPassword />}
               />
               <Route
                 path="/change-password"
